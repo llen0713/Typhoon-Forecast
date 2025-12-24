@@ -215,12 +215,10 @@
 
         .legend-items {
             display: flex;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;
             gap: 15px;
-            overflow-x: auto;
             align-items: center;
-            padding-bottom: 6px;
-            -webkit-overflow-scrolling: touch;
+            justify-content: center;
         }
 
         .legend-item {
@@ -344,13 +342,15 @@
             }
 
             .storm-title {
-                font-size: 1.4em;
-                line-height: 1.3;
+                font-size: 1.5em;
+                line-height: 1.4;
             }
 
             .storm-id {
-                font-size: 1em;
-                padding: 8px 16px;
+                font-size: 1.05em;
+                padding: 10px 20px;
+                width: 100%;
+                text-align: center;
             }
 
             .alert-badge {
@@ -380,24 +380,26 @@
             }
 
             .legend {
-                padding: 20px;
+                padding: 18px;
                 border-radius: 15px;
                 margin-top: 15px;
             }
 
             .legend-title {
-                font-size: 1.1em;
-                margin-bottom: 12px;
+                font-size: 1.05em;
+                margin-bottom: 10px;
+                text-align: center;
             }
 
             .legend-items {
-                gap: 10px;
-                padding-bottom: 8px;
+                gap: 8px;
+                justify-content: center;
             }
 
             .legend-item {
-                padding: 6px 10px;
-                font-size: 0.85em;
+                padding: 8px 12px;
+                font-size: 0.9em;
+                flex: 0 0 auto;
             }
 
             .legend-color {
@@ -468,12 +470,16 @@
             }
 
             .legend-title {
-                font-size: 1em;
+                font-size: 0.95em;
+            }
+
+            .legend-items {
+                gap: 6px;
             }
 
             .legend-item {
-                font-size: 0.8em;
-                padding: 5px 8px;
+                font-size: 0.85em;
+                padding: 6px 10px;
             }
 
             .map-title {
@@ -519,7 +525,7 @@
                     <div class="subtitle">Real-time FNV3 Ensemble Forecast System</div>
                 </div>
                 <div class="update-badge">
-                    ⏰ Updated: 2025-12-24 21:45:18
+                    ⏰ Updated: 2025-12-24 21:51:30
                 </div>
             </div>
         </header>
