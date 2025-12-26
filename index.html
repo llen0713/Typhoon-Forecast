@@ -196,6 +196,120 @@
             transform: scale(1.02);
         }
 
+        /* Animation Player */
+        .animation-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .animation-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .animation-player {
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .animation-frame {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .progress-bar-container {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .frame-counter {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 600;
+            white-space: nowrap;
+            min-width: 60px;
+            text-align: right;
+        }
+
         /* Legend */
         .legend {
             background: rgba(255, 255, 255, 0.95);
@@ -525,7 +639,7 @@
                     <div class="subtitle">Real-time FNV3 Ensemble Forecast System</div>
                 </div>
                 <div class="update-badge">
-                    ⏰ Updated: 2025-12-26 09:05:48
+                    ⏰ Updated: 2025-12-26 14:54:45
                 </div>
             </div>
         </header>
@@ -544,15 +658,15 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">🛰️ Current Time</div>
-                        <div class="info-value">18:00 UTC Dec 25, 2025</div>
+                        <div class="info-value">00:00 UTC Dec 26, 2025</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">📍 Current Position</div>
-                        <div class="info-value">12.6°S, 94.4°E</div>
+                        <div class="info-value">12.4°S, 93.4°E</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">💨 Maximum Wind</div>
-                        <div class="info-value">45 kt</div>
+                        <div class="info-value">50 kt</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">🔥 Intensity (Saffir-Simpson)</div>
@@ -563,15 +677,15 @@
                     </div>
                     <div class="info-item">
                         <div class="info-label">📊 Min Central Pressure</div>
-                        <div class="info-value">995 mb</div>
+                        <div class="info-value">993 mb</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">🎯 Radius of Max Wind</div>
-                        <div class="info-value">70 nm</div>
+                        <div class="info-value">50 nm</div>
                     </div>
                     <div class="info-item" style="grid-column: span 2;">
                         <div class="info-label">🌀 34 kt Wind Radii (NE/SE/SW/NW)</div>
-                        <div class="info-value">35 / 35 / 50 / 50 nm</div>
+                        <div class="info-value">40 / 35 / 50 / 60 nm</div>
                     </div>
                 </div>
 
@@ -611,9 +725,31 @@
                 </div>
             </div>
 
+            
+            <!-- Animation Player -->
+            <div class="animation-container">
+                <div class="animation-title">🎬 Track Evolution Animation</div>
+                <div class="animation-player">
+                    <img id="animation-frame-IO092025" src="animation_frames/frame_0000.png" alt="Animation" class="animation-frame">
+                    <div class="player-controls">
+                        <button class="control-btn" onclick="playAnimation('IO092025')">▶ Play</button>
+                        <button class="control-btn" onclick="pauseAnimation('IO092025')">⏸ Pause</button>
+                        <button class="control-btn" onclick="resetAnimation('IO092025')">⟲ Reset</button>
+                        <div class="progress-bar-container">
+                            <input type="range" id="progress-IO092025" class="progress-slider" min="0" max="52" value="0" 
+                                   oninput="seekFrame('IO092025', this.value)">
+                            <span id="frame-counter-IO092025" class="frame-counter">1/53</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    <strong>Controls:</strong> Play/Pause the animation or use the slider to manually seek through frames.
+                </div>
+            </div>
+
             <!-- Map Container -->
             <div class="map-container">
-                <div class="map-title">📍 Track Forecast Map</div>
+                <div class="map-title">📍 Static Track Forecast Map</div>
                 <img src="IO092025_Forecast_Map.png" alt="IO092025 Forecast Map" class="map-image">
                 <div style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
                     <strong>Note:</strong> Gray lines represent individual ensemble members (spaghetti plot). 
@@ -641,6 +777,104 @@
     </div>
 
     <script>
+        // Animation player state
+        const animationState = {};
+
+        function initAnimation(trackId) {
+            animationState[trackId] = {
+                isPlaying: false,
+                currentFrame: 0,
+                frameFiles: [],
+                animationInterval: null
+            };
+        }
+
+        function loadFrameFiles(trackId, frameDir) {
+            // 從 animation_frames 目錄讀取所有 PNG 檔案
+            const frames = [];
+            // 這個函數會在頁面加載時被呼叫，以動態取得幀列表
+            return frames;
+        }
+
+        function playAnimation(trackId) {
+            if (!animationState[trackId]) initAnimation(trackId);
+            const state = animationState[trackId];
+            
+            if (state.isPlaying) return;
+            state.isPlaying = true;
+
+            const frameImg = document.getElementById(`animation-frame-${trackId}`);
+            const progressSlider = document.getElementById(`progress-${trackId}`);
+            const frameCounter = document.getElementById(`frame-counter-${trackId}`);
+
+            if (!frameImg) return;
+
+            // 取得幀列表（從 HTML 中的 data 屬性）
+            const frameDir = 'animation_frames';
+            
+            state.animationInterval = setInterval(() => {
+                const maxFrames = parseInt(progressSlider.max) + 1;
+                state.currentFrame = (state.currentFrame + 1) % maxFrames;
+                
+                updateFrame(trackId);
+            }, 500); // 2 fps
+        }
+
+        function pauseAnimation(trackId) {
+            if (!animationState[trackId]) return;
+            const state = animationState[trackId];
+            
+            state.isPlaying = false;
+            if (state.animationInterval) {
+                clearInterval(state.animationInterval);
+                state.animationInterval = null;
+            }
+        }
+
+        function resetAnimation(trackId) {
+            pauseAnimation(trackId);
+            if (!animationState[trackId]) initAnimation(trackId);
+            animationState[trackId].currentFrame = 0;
+            updateFrame(trackId);
+        }
+
+        function seekFrame(trackId, frameIndex) {
+            pauseAnimation(trackId);
+            if (!animationState[trackId]) initAnimation(trackId);
+            animationState[trackId].currentFrame = parseInt(frameIndex);
+            updateFrame(trackId);
+        }
+
+        function updateFrame(trackId) {
+            if (!animationState[trackId]) return;
+            const state = animationState[trackId];
+            
+            const frameImg = document.getElementById(`animation-frame-${trackId}`);
+            const progressSlider = document.getElementById(`progress-${trackId}`);
+            const frameCounter = document.getElementById(`frame-counter-${trackId}`);
+
+            if (!frameImg) return;
+
+            const frameNum = String(state.currentFrame).padStart(4, '0');
+            frameImg.src = `animation_frames/frame_${frameNum}.png`;
+            
+            if (progressSlider) progressSlider.value = state.currentFrame;
+            if (frameCounter) {
+                const total = parseInt(progressSlider.max) + 1;
+                frameCounter.textContent = `${state.currentFrame + 1}/${total}`;
+            }
+        }
+
+        // 自動初始化所有動畫播放器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化所有 track_id 的動畫
+            const animationFrames = document.querySelectorAll('[id^="animation-frame-"]');
+            animationFrames.forEach(frameImg => {
+                const trackId = frameImg.id.replace('animation-frame-', '');
+                initAnimation(trackId);
+            });
+        });
+
         // Auto-refresh every 5 minutes
         setTimeout(function(){
             location.reload();
