@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pillar's Tropical Cyclone Forecast | IO092025</title>
+    <title>Pillar's Tropical Cyclone Forecast | IO102025</title>
     <style>
         * {
             margin: 0;
@@ -639,7 +639,7 @@
                     <div class="subtitle">Real-time FNV3 Ensemble Forecast System</div>
                 </div>
                 <div class="update-badge">
-                    ⏰ Updated: 2025-12-28 18:39:08
+                    ⏰ Updated: 2025-12-28 22:11:08
                 </div>
             </div>
         </header>
@@ -658,15 +658,15 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">🛰️ Current Time</div>
-                        <div class="info-value">06:00 UTC Dec 28, 2025</div>
+                        <div class="info-value">N/A</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">📍 Current Position</div>
-                        <div class="info-value">12.7°S, 85.4°E</div>
+                        <div class="info-value">N/A, N/A</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">💨 Maximum Wind</div>
-                        <div class="info-value">75 kt</div>
+                        <div class="info-value">N/A</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">🔥 Intensity (Saffir-Simpson)</div>
@@ -677,15 +677,11 @@
                     </div>
                     <div class="info-item">
                         <div class="info-label">📊 Min Central Pressure</div>
-                        <div class="info-value">980 mb</div>
+                        <div class="info-value">N/A</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">🎯 Radius of Max Wind</div>
-                        <div class="info-value">35 nm</div>
-                    </div>
-                    <div class="info-item" style="grid-column: span 2;">
-                        <div class="info-label">🌀 34 kt Wind Radii (NE/SE/SW/NW)</div>
-                        <div class="info-value">40 / 40 / 50 / 50 nm</div>
+                        <div class="info-value">N/A</div>
                     </div>
                 </div>
 
@@ -730,7 +726,11 @@
             <div class="animation-container">
                 <div class="animation-title">🎬 Track Evolution Animation</div>
                 <div class="animation-player">
-                    <img id="animation-frame-IO092025" src="animation_frames/frame_0000.png" alt="Animation" class="animation-frame">
+                    <img id="animation-frame-IO092025" 
+                         src="animation_frames_IO092025/frame_0000.png" 
+                         alt="Animation" 
+                         class="animation-frame"
+                         data-frames-dir="animation_frames_IO092025">
                     <div class="player-controls">
                         <button class="control-btn" onclick="playAnimation('IO092025')">▶ Play</button>
                         <button class="control-btn" onclick="pauseAnimation('IO092025')">⏸ Pause</button>
@@ -751,6 +751,118 @@
             <div class="map-container">
                 <div class="map-title">📍 Static Track Forecast Map</div>
                 <img src="IO092025_Forecast_Map.png" alt="IO092025 Forecast Map" class="map-image">
+                <div style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Note:</strong> Gray lines represent individual ensemble members (spaghetti plot). 
+                    Red line shows the ensemble mean track with 24-hour position markers. 
+                    Colored dots indicate intensity at 6-hour intervals.
+                </div>
+            </div>
+        
+
+            <div class="storm-card">
+                <div class="storm-header">
+                    <div class="storm-title">
+                        TEN <span class="alert-badge">LIVE</span>
+                    </div>
+                    <div class="storm-id">IO102025</div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">🛰️ Current Time</div>
+                        <div class="info-value">N/A</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">📍 Current Position</div>
+                        <div class="info-value">N/A, N/A</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">💨 Maximum Wind</div>
+                        <div class="info-value">N/A</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">🔥 Intensity (Saffir-Simpson)</div>
+                        <div class="info-value intensity-value">
+                            <span class="intensity-dot" style="background: #00FFFF;"></span>
+                            <span class="legend-label">TS</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">📊 Min Central Pressure</div>
+                        <div class="info-value">N/A</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">🎯 Radius of Max Wind</div>
+                        <div class="info-value">N/A</div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend">
+                    <div class="legend-title">🎨 Intensity Scale (Saffir-Simpson)</div>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #CCCCCC;"></div>
+                            <div class="legend-label">TD (< 34 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00FFFF;"></div>
+                            <div class="legend-label">TS (34-63 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00FF00;"></div>
+                            <div class="legend-label">Cat 1 (64-82 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FFFF00;"></div>
+                            <div class="legend-label">Cat 2 (83-95 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FFA500;"></div>
+                            <div class="legend-label">Cat 3 (96-112 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FF0000;"></div>
+                            <div class="legend-label">Cat 4 (113-136 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #800080;"></div>
+                            <div class="legend-label">Cat 5 (≥ 137 kt)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <!-- Animation Player -->
+            <div class="animation-container">
+                <div class="animation-title">🎬 Track Evolution Animation</div>
+                <div class="animation-player">
+                    <img id="animation-frame-IO102025" 
+                         src="animation_frames_IO102025/frame_0000.png" 
+                         alt="Animation" 
+                         class="animation-frame"
+                         data-frames-dir="animation_frames_IO102025">
+                    <div class="player-controls">
+                        <button class="control-btn" onclick="playAnimation('IO102025')">▶ Play</button>
+                        <button class="control-btn" onclick="pauseAnimation('IO102025')">⏸ Pause</button>
+                        <button class="control-btn" onclick="resetAnimation('IO102025')">⟲ Reset</button>
+                        <div class="progress-bar-container">
+                            <input type="range" id="progress-IO102025" class="progress-slider" min="0" max="24" value="0" 
+                                   oninput="seekFrame('IO102025', this.value)">
+                            <span id="frame-counter-IO102025" class="frame-counter">1/25</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    <strong>Controls:</strong> Play/Pause the animation or use the slider to manually seek through frames.
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="map-container">
+                <div class="map-title">📍 Static Track Forecast Map</div>
+                <img src="IO102025_Forecast_Map.png" alt="IO102025 Forecast Map" class="map-image">
                 <div style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
                     <strong>Note:</strong> Gray lines represent individual ensemble members (spaghetti plot). 
                     Red line shows the ensemble mean track with 24-hour position markers. 
@@ -855,8 +967,10 @@
 
             if (!frameImg) return;
 
+            // 從 img 元素的 data 屬性取得幀資料夾路徑
+            const framesDir = frameImg.getAttribute('data-frames-dir') || 'animation_frames';
             const frameNum = String(state.currentFrame).padStart(4, '0');
-            frameImg.src = `animation_frames/frame_${frameNum}.png`;
+            frameImg.src = `${framesDir}/frame_${frameNum}.png`;
             
             if (progressSlider) progressSlider.value = state.currentFrame;
             if (frameCounter) {
