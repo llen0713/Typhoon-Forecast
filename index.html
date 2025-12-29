@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pillar's Tropical Cyclone Forecast | IO102025</title>
+    <title>Pillar's Tropical Cyclone Forecast | IO092025 / IO102025</title>
     <style>
         * {
             margin: 0;
@@ -493,6 +493,36 @@
                 word-break: break-word;
             }
 
+            /* JTWC风圈数据优化 */
+            .mobile-wind-radii {
+                grid-column: span 1 !important;
+            }
+
+            .mobile-wind-radii .info-label {
+                font-size: 0.9em;
+                margin-bottom: 8px;
+            }
+
+            .mobile-wind-radii .info-value {
+                font-size: 1.05em;
+                line-height: 1.5;
+                word-break: break-word;
+            }
+
+            /* JTWC地图优化 */
+            .jtwc-forecast-map {
+                padding: 15px;
+            }
+
+            .jtwc-forecast-map .map-title {
+                font-size: 1.3em;
+            }
+
+            .jtwc-forecast-map .map-description {
+                font-size: 0.9em !important;
+                line-height: 1.5 !important;
+            }
+
             .legend {
                 padding: 18px;
                 border-radius: 15px;
@@ -583,6 +613,26 @@
                 font-size: 1.05em;
             }
 
+            /* JTWC风圈在小屏幕上更大的字体 */
+            .mobile-wind-radii .info-label {
+                font-size: 0.85em;
+            }
+
+            .mobile-wind-radii .info-value {
+                font-size: 0.95em;
+                line-height: 1.6;
+            }
+
+            /* JTWC地图在小屏幕上的优化 */
+            .jtwc-forecast-map {
+                padding: 12px;
+            }
+
+            .jtwc-forecast-map .map-title {
+                font-size: 1.15em;
+                margin-bottom: 12px;
+            }
+
             .legend-title {
                 font-size: 0.95em;
             }
@@ -639,7 +689,7 @@
                     <div class="subtitle">Real-time FNV3 Ensemble Forecast System</div>
                 </div>
                 <div class="update-badge">
-                    ⏰ Updated: 2025-12-28 22:11:08
+                    ⏰ Updated: 2025-12-29 12:47:39
                 </div>
             </div>
         </header>
@@ -658,30 +708,34 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">🛰️ Current Time</div>
-                        <div class="info-value">N/A</div>
+                        <div class="info-value">290000 Z</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">📍 Current Position</div>
-                        <div class="info-value">N/A, N/A</div>
+                        <div class="info-value">13.6°S, 82.0°E</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">💨 Maximum Wind</div>
-                        <div class="info-value">N/A</div>
+                        <div class="info-value">105 kt</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">🔥 Intensity (Saffir-Simpson)</div>
                         <div class="info-value intensity-value">
-                            <span class="intensity-dot" style="background: #00FF00;"></span>
-                            <span class="legend-label">Cat1</span>
+                            <span class="intensity-dot" style="background: #FFA500;"></span>
+                            <span class="legend-label">Cat3</span>
                         </div>
                     </div>
-                    <div class="info-item">
-                        <div class="info-label">📊 Min Central Pressure</div>
-                        <div class="info-value">N/A</div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 34 kt Wind Radii</div>
+                        <div class="info-value">NE: 045 / SE: 050 / SW: 050 / NW: 040 nm</div>
                     </div>
-                    <div class="info-item">
-                        <div class="info-label">🎯 Radius of Max Wind</div>
-                        <div class="info-value">N/A</div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 50 kt Wind Radii</div>
+                        <div class="info-value">NE: 025 / SE: 030 / SW: 030 / NW: 025 nm</div>
+                    </div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 64 kt Wind Radii</div>
+                        <div class="info-value">NE: 020 / SE: 020 / SW: 020 / NW: 015 nm</div>
                     </div>
                 </div>
 
@@ -749,7 +803,7 @@
 
             <!-- Map Container -->
             <div class="map-container">
-                <div class="map-title">📍 Static Track Forecast Map</div>
+                <div class="map-title">📍 FNV3 Track Forecast Map</div>
                 <img src="IO092025_Forecast_Map.png" alt="IO092025 Forecast Map" class="map-image">
                 <div style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
                     <strong>Note:</strong> Gray lines represent individual ensemble members (spaghetti plot). 
@@ -757,12 +811,21 @@
                     Colored dots indicate intensity at 6-hour intervals.
                 </div>
             </div>
+
+            <!-- JTWC Forecast Map Container -->
+            <div class="map-container jtwc-forecast-map" style="margin-top: 30px;">
+                <div class="map-title">🌐 JTWC Official Forecast</div>
+                <img src="jtwc_IO092025.gif" alt="JTWC Forecast" class="map-image" onerror="this.parentElement.style.display='none'">
+                <div class="map-description" style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Source:</strong> Joint Typhoon Warning Center (JTWC) - U.S. Navy & Air Force
+                </div>
+            </div>
         
 
             <div class="storm-card">
                 <div class="storm-header">
                     <div class="storm-title">
-                        TEN <span class="alert-badge">LIVE</span>
+                        HAYLEY <span class="alert-badge">LIVE</span>
                     </div>
                     <div class="storm-id">IO102025</div>
                 </div>
@@ -770,15 +833,15 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">🛰️ Current Time</div>
-                        <div class="info-value">N/A</div>
+                        <div class="info-value">290000 Z</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">📍 Current Position</div>
-                        <div class="info-value">N/A, N/A</div>
+                        <div class="info-value">15.0°S, 119.5°E</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">💨 Maximum Wind</div>
-                        <div class="info-value">N/A</div>
+                        <div class="info-value">55 kt</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">🔥 Intensity (Saffir-Simpson)</div>
@@ -787,13 +850,17 @@
                             <span class="legend-label">TS</span>
                         </div>
                     </div>
-                    <div class="info-item">
-                        <div class="info-label">📊 Min Central Pressure</div>
-                        <div class="info-value">N/A</div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 34 kt Wind Radii</div>
+                        <div class="info-value">NE: 035 / SE: 030 / SW: 030 / NW: 035 nm</div>
                     </div>
-                    <div class="info-item">
-                        <div class="info-label">🎯 Radius of Max Wind</div>
-                        <div class="info-value">N/A</div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 50 kt Wind Radii</div>
+                        <div class="info-value">NE: 020 / SE: 020 / SW: 020 / NW: 020 nm</div>
+                    </div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 64 kt Wind Radii</div>
+                        <div class="info-value">NE: 010 / SE: 010 / SW: 010 / NW: 010 nm</div>
                     </div>
                 </div>
 
@@ -848,9 +915,9 @@
                         <button class="control-btn" onclick="pauseAnimation('IO102025')">⏸ Pause</button>
                         <button class="control-btn" onclick="resetAnimation('IO102025')">⟲ Reset</button>
                         <div class="progress-bar-container">
-                            <input type="range" id="progress-IO102025" class="progress-slider" min="0" max="24" value="0" 
+                            <input type="range" id="progress-IO102025" class="progress-slider" min="0" max="19" value="0" 
                                    oninput="seekFrame('IO102025', this.value)">
-                            <span id="frame-counter-IO102025" class="frame-counter">1/25</span>
+                            <span id="frame-counter-IO102025" class="frame-counter">1/20</span>
                         </div>
                     </div>
                 </div>
@@ -861,12 +928,21 @@
 
             <!-- Map Container -->
             <div class="map-container">
-                <div class="map-title">📍 Static Track Forecast Map</div>
+                <div class="map-title">📍 FNV3 Track Forecast Map</div>
                 <img src="IO102025_Forecast_Map.png" alt="IO102025 Forecast Map" class="map-image">
                 <div style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
                     <strong>Note:</strong> Gray lines represent individual ensemble members (spaghetti plot). 
                     Red line shows the ensemble mean track with 24-hour position markers. 
                     Colored dots indicate intensity at 6-hour intervals.
+                </div>
+            </div>
+
+            <!-- JTWC Forecast Map Container -->
+            <div class="map-container jtwc-forecast-map" style="margin-top: 30px;">
+                <div class="map-title">🌐 JTWC Official Forecast</div>
+                <img src="jtwc_IO102025.gif" alt="JTWC Forecast" class="map-image" onerror="this.parentElement.style.display='none'">
+                <div class="map-description" style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Source:</strong> Joint Typhoon Warning Center (JTWC) - U.S. Navy & Air Force
                 </div>
             </div>
         
@@ -880,6 +956,7 @@
                 <div class="footer-links">
                     <a href="https://deepmind.google/discover/blog/graphcast-ai-model-for-faster-and-more-accurate-global-weather-forecasting/" class="footer-link" target="_blank">📚 About FNV3</a>
                     <a href="https://deepmind.google.com/science/weatherlab" class="footer-link" target="_blank">🌐 DeepMind Weather</a>
+                    <a href="https://www.metoc.navy.mil/jtwc/jtwc.html" class="footer-link" target="_blank">🛰️ JTWC Official Site</a>
                 </div>
                 <p style="margin-top: 15px; font-size: 0.85em; opacity: 0.8;">
                     © 2025 Pillar's Weather site. All rights reserved. | Made By Pillar
