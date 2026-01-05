@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pillar's Tropical Cyclone Forecast | IO092026</title>
+    <title>Pillar's Tropical Cyclone Forecast | IO122026</title>
     <style>
         * {
             margin: 0;
@@ -689,7 +689,7 @@
                     <div class="subtitle">Real-time FNV3 Ensemble Forecast System</div>
                 </div>
                 <div class="update-badge">
-                    ⏰ Updated: 2026-01-04 17:32:10
+                    ⏰ Updated: 2026-01-05 16:10:34
                 </div>
             </div>
         </header>
@@ -700,34 +700,38 @@
             <div class="storm-card">
                 <div class="storm-header">
                     <div class="storm-title">
-                        GRANT <span class="alert-badge">LIVE</span>
+                        JENNA <span class="alert-badge">LIVE</span>
                     </div>
-                    <div class="storm-id">IO092026</div>
+                    <div class="storm-id">IO122026</div>
                 </div>
 
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">🛰️ Current Time</div>
-                        <div class="info-value">040000 Z</div>
+                        <div class="info-value">050600 Z</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">📍 Current Position</div>
-                        <div class="info-value">15.6°S, 62.3°E</div>
+                        <div class="info-value">12.7°S, 96.9°E</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">💨 Maximum Wind</div>
-                        <div class="info-value">30 kt</div>
+                        <div class="info-value">45 kt</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">🔥 Intensity (Saffir-Simpson)</div>
                         <div class="info-value intensity-value">
-                            <span class="intensity-dot" style="background: #CCCCCC;"></span>
-                            <span class="legend-label">TD</span>
+                            <span class="intensity-dot" style="background: #00FFFF;"></span>
+                            <span class="legend-label">TS</span>
                         </div>
                     </div>
                     <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
                         <div class="info-label">🌀 34 kt Wind Radii</div>
-                        <div class="info-value">NE: 000 / SE: 040 / SW: 040 / NW: 000 nm</div>
+                        <div class="info-value">NE: 125 / SE: 090 / SW: 050 / NW: 100 nm</div>
+                    </div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 50 kt Wind Radii</div>
+                        <div class="info-value">NE: 000 / SE: 010 / SW: 010 / NW: 000 nm</div>
                     </div>
                 </div>
 
@@ -772,19 +776,19 @@
             <div class="animation-container">
                 <div class="animation-title">🎬 Track Evolution Animation</div>
                 <div class="animation-player">
-                    <img id="animation-frame-IO092026" 
-                         src="animation_frames_IO092026/frame_0000.png" 
+                    <img id="animation-frame-IO122026" 
+                         src="animation_frames_IO122026/frame_0000.png" 
                          alt="Animation" 
                          class="animation-frame"
-                         data-frames-dir="animation_frames_IO092026">
+                         data-frames-dir="animation_frames_IO122026">
                     <div class="player-controls">
-                        <button class="control-btn" onclick="playAnimation('IO092026')">▶ Play</button>
-                        <button class="control-btn" onclick="pauseAnimation('IO092026')">⏸ Pause</button>
-                        <button class="control-btn" onclick="resetAnimation('IO092026')">⟲ Reset</button>
+                        <button class="control-btn" onclick="playAnimation('IO122026')">▶ Play</button>
+                        <button class="control-btn" onclick="pauseAnimation('IO122026')">⏸ Pause</button>
+                        <button class="control-btn" onclick="resetAnimation('IO122026')">⟲ Reset</button>
                         <div class="progress-bar-container">
-                            <input type="range" id="progress-IO092026" class="progress-slider" min="0" max="15" value="0" 
-                                   oninput="seekFrame('IO092026', this.value)">
-                            <span id="frame-counter-IO092026" class="frame-counter">1/16</span>
+                            <input type="range" id="progress-IO122026" class="progress-slider" min="0" max="32" value="0" 
+                                   oninput="seekFrame('IO122026', this.value)">
+                            <span id="frame-counter-IO122026" class="frame-counter">1/33</span>
                         </div>
                     </div>
                 </div>
@@ -796,7 +800,7 @@
             <!-- Map Container -->
             <div class="map-container">
                 <div class="map-title">📍 FNV3 Track Forecast Map</div>
-                <img src="IO092026_Forecast_Map.png" alt="IO092026 Forecast Map" class="map-image">
+                <img src="IO122026_Forecast_Map.png" alt="IO122026 Forecast Map" class="map-image">
                 <div style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
                     <strong>Note:</strong> Gray lines represent individual ensemble members (spaghetti plot). 
                     Red line shows the ensemble mean track with 24-hour position markers. 
@@ -807,7 +811,7 @@
             <!-- JTWC Forecast Map Container -->
             <div class="map-container jtwc-forecast-map" style="margin-top: 30px;">
                 <div class="map-title">🌐 JTWC Official Forecast</div>
-                <img src="jtwc_IO092026.gif" alt="JTWC Forecast" class="map-image" onerror="this.parentElement.style.display='none'">
+                <img src="jtwc_IO122026.gif" alt="JTWC Forecast" class="map-image" onerror="this.parentElement.style.display='none'">
                 <div class="map-description" style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
                     <strong>Source:</strong> Joint Typhoon Warning Center (JTWC) - U.S. Navy & Air Force
                 </div>
