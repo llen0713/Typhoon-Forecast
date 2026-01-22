@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pillar's Tropical Cyclone Forecast | SH162026</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+
+        .update-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.9em;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Storm Info Card */
+        .storm-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .storm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+
+        .storm-title {
+            font-size: 2em;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .storm-id {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .info-item {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .intensity-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Map Container */
+        .map-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .map-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .map-image {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .map-image:hover {
+            transform: scale(1.02);
+        }
+
+        /* Animation Player */
+        .animation-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .animation-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .animation-player {
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .animation-frame {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .progress-bar-container {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .frame-counter {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 600;
+            white-space: nowrap;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Legend */
+        .legend {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+
+        .legend-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            white-space: nowrap;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .intensity-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        .legend-label {
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+            font-size: 0.9em;
+            animation: fadeIn 1s ease-out 0.4s both;
+        }
+
+        .footer-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .footer-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .footer-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                letter-spacing: 0;
+            }
+
+            .subtitle {
+                font-size: 0.95em;
+            }
+
+            header {
+                padding: 20px;
+                border-radius: 15px;
+                margin-bottom: 20px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .update-badge {
+                font-size: 0.85em;
+                padding: 10px 18px;
+                width: 100%;
+                text-align: center;
+            }
+
+            .storm-card {
+                padding: 20px;
+                border-radius: 15px;
+                margin-bottom: 15px;
+            }
+
+            .storm-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+            }
+
+            .storm-title {
+                font-size: 1.5em;
+                line-height: 1.4;
+            }
+
+            .storm-id {
+                font-size: 1.05em;
+                padding: 10px 20px;
+                width: 100%;
+                text-align: center;
+            }
+
+            .alert-badge {
+                font-size: 0.75em;
+                padding: 4px 10px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .info-item {
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .info-label {
+                font-size: 0.85em;
+                margin-bottom: 6px;
+            }
+
+            .info-value {
+                font-size: 1.15em;
+                word-break: break-word;
+            }
+
+            /* JTWC风圈数据优化 */
+            .mobile-wind-radii {
+                grid-column: span 1 !important;
+            }
+
+            .mobile-wind-radii .info-label {
+                font-size: 0.9em;
+                margin-bottom: 8px;
+            }
+
+            .mobile-wind-radii .info-value {
+                font-size: 1.05em;
+                line-height: 1.5;
+                word-break: break-word;
+            }
+
+            /* JTWC地图优化 */
+            .jtwc-forecast-map {
+                padding: 15px;
+            }
+
+            .jtwc-forecast-map .map-title {
+                font-size: 1.3em;
+            }
+
+            .jtwc-forecast-map .map-description {
+                font-size: 0.9em !important;
+                line-height: 1.5 !important;
+            }
+
+            .legend {
+                padding: 18px;
+                border-radius: 15px;
+                margin-top: 15px;
+            }
+
+            .legend-title {
+                font-size: 1.05em;
+                margin-bottom: 10px;
+                text-align: center;
+            }
+
+            .legend-items {
+                gap: 8px;
+                justify-content: center;
+            }
+
+            .legend-item {
+                padding: 8px 12px;
+                font-size: 0.9em;
+                flex: 0 0 auto;
+            }
+
+            .legend-color {
+                width: 14px;
+                height: 14px;
+            }
+
+            .intensity-dot {
+                width: 14px;
+                height: 14px;
+            }
+
+            .map-container {
+                padding: 20px;
+                border-radius: 15px;
+            }
+
+            .map-title {
+                font-size: 1.4em;
+                margin-bottom: 15px;
+            }
+
+            .map-image {
+                border-radius: 12px;
+            }
+
+            footer {
+                margin-top: 30px;
+                font-size: 0.85em;
+            }
+
+            .footer-content {
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 12px;
+            }
+
+            .footer-link {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.3em;
+            }
+
+            .subtitle {
+                font-size: 0.9em;
+            }
+
+            .storm-title {
+                font-size: 1.2em;
+            }
+
+            .info-label {
+                font-size: 0.8em;
+            }
+
+            .info-value {
+                font-size: 1.05em;
+            }
+
+            /* JTWC风圈在小屏幕上更大的字体 */
+            .mobile-wind-radii .info-label {
+                font-size: 0.85em;
+            }
+
+            .mobile-wind-radii .info-value {
+                font-size: 0.95em;
+                line-height: 1.6;
+            }
+
+            /* JTWC地图在小屏幕上的优化 */
+            .jtwc-forecast-map {
+                padding: 12px;
+            }
+
+            .jtwc-forecast-map .map-title {
+                font-size: 1.15em;
+                margin-bottom: 12px;
+            }
+
+            .legend-title {
+                font-size: 0.95em;
+            }
+
+            .legend-items {
+                gap: 6px;
+            }
+
+            .legend-item {
+                font-size: 0.85em;
+                padding: 6px 10px;
+            }
+
+            .map-title {
+                font-size: 1.2em;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Alert Badge */
+        .alert-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1>🌀 Pillar's Tropical Cyclone Forecast</h1>
+                    <div class="subtitle">Real-time FNV3 Ensemble Forecast System</div>
+                </div>
+                <div class="update-badge">
+                    ⏰ Updated: 2026-01-22 15:38:24
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+
+            <div class="storm-card">
+                <div class="storm-header">
+                    <div class="storm-title">
+                        SIXTEEN <span class="alert-badge">LIVE</span>
+                    </div>
+                    <div class="storm-id">SH162026</div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">🛰️ Current Time</div>
+                        <div class="info-value">220000 Z</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">📍 Current Position</div>
+                        <div class="info-value">23.9°S, 168.1°E</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">💨 Maximum Wind</div>
+                        <div class="info-value">40 kt</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">🔥 Intensity (Saffir-Simpson)</div>
+                        <div class="info-value intensity-value">
+                            <span class="intensity-dot" style="background: #00FFFF;"></span>
+                            <span class="legend-label">TS</span>
+                        </div>
+                    </div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 34 kt Wind Radii</div>
+                        <div class="info-value">NE: 060 / SE: 030 / SW: 000 / NW: 050 nm</div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend">
+                    <div class="legend-title">🎨 Intensity Scale (Saffir-Simpson)</div>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #CCCCCC;"></div>
+                            <div class="legend-label">TD (< 34 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00FFFF;"></div>
+                            <div class="legend-label">TS (34-63 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00FF00;"></div>
+                            <div class="legend-label">Cat 1 (64-82 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FFFF00;"></div>
+                            <div class="legend-label">Cat 2 (83-95 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FFA500;"></div>
+                            <div class="legend-label">Cat 3 (96-112 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FF0000;"></div>
+                            <div class="legend-label">Cat 4 (113-136 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #800080;"></div>
+                            <div class="legend-label">Cat 5 (≥ 137 kt)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <!-- Animation Player -->
+            <div class="animation-container">
+                <div class="animation-title">🎬 Track Evolution Animation</div>
+                <div class="animation-player">
+                    <img id="animation-frame-SH162026" 
+                         src="animation_frames_SH162026/frame_0000.png" 
+                         alt="Animation" 
+                         class="animation-frame"
+                         data-frames-dir="animation_frames_SH162026">
+                    <div class="player-controls">
+                        <button class="control-btn" onclick="playAnimation('SH162026')">▶ Play</button>
+                        <button class="control-btn" onclick="pauseAnimation('SH162026')">⏸ Pause</button>
+                        <button class="control-btn" onclick="resetAnimation('SH162026')">⟲ Reset</button>
+                        <div class="progress-bar-container">
+                            <input type="range" id="progress-SH162026" class="progress-slider" min="0" max="8" value="0" 
+                                   oninput="seekFrame('SH162026', this.value)">
+                            <span id="frame-counter-SH162026" class="frame-counter">1/9</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    <strong>Controls:</strong> Play/Pause the animation or use the slider to manually seek through frames.
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="map-container">
+                <div class="map-title">📍 FNV3 Track Forecast Map</div>
+                <img src="SH162026_Forecast_Map.png" alt="SH162026 Forecast Map" class="map-image">
+                <div style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Note:</strong> Gray lines represent individual ensemble members (spaghetti plot). 
+                    Red line shows the ensemble mean track with 24-hour position markers. 
+                    Colored dots indicate intensity at 6-hour intervals.
+                </div>
+            </div>
+
+            <!-- JTWC Forecast Map Container -->
+            <div class="map-container jtwc-forecast-map" style="margin-top: 30px;">
+                <div class="map-title">🌐 JTWC Official Forecast</div>
+                <img src="jtwc_SH162026.gif" alt="JTWC Forecast" class="map-image" onerror="this.parentElement.style.display='none'">
+                <div class="map-description" style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Source:</strong> Joint Typhoon Warning Center (JTWC) - U.S. Navy & Air Force
+                </div>
+            </div>
+        
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-content">
+                <p><strong>Pillar's Tropical Cyclone Forecast System</strong></p>
+                <p style="margin-top: 10px;">Data Source: DeepMind Weather FNV3 Ensemble Model</p>
+                <div class="footer-links">
+                    <a href="https://deepmind.google/discover/blog/graphcast-ai-model-for-faster-and-more-accurate-global-weather-forecasting/" class="footer-link" target="_blank">📚 About FNV3</a>
+                    <a href="https://deepmind.google.com/science/weatherlab" class="footer-link" target="_blank">🌐 DeepMind Weather</a>
+                    <a href="https://www.metoc.navy.mil/jtwc/jtwc.html" class="footer-link" target="_blank">🛰️ JTWC Official Site</a>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.85em; opacity: 0.8;">
+                    © 2025 Pillar's Weather site. All rights reserved. | Made By Pillar
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Animation player state
+        const animationState = {};
+
+        function initAnimation(trackId) {
+            animationState[trackId] = {
+                isPlaying: false,
+                currentFrame: 0,
+                frameFiles: [],
+                animationInterval: null
+            };
+        }
+
+        function loadFrameFiles(trackId, frameDir) {
+            // 從 animation_frames 目錄讀取所有 PNG 檔案
+            const frames = [];
+            // 這個函數會在頁面加載時被呼叫，以動態取得幀列表
+            return frames;
+        }
+
+        function playAnimation(trackId) {
+            if (!animationState[trackId]) initAnimation(trackId);
+            const state = animationState[trackId];
+            
+            if (state.isPlaying) return;
+            state.isPlaying = true;
+
+            const frameImg = document.getElementById(`animation-frame-${trackId}`);
+            const progressSlider = document.getElementById(`progress-${trackId}`);
+            const frameCounter = document.getElementById(`frame-counter-${trackId}`);
+
+            if (!frameImg) return;
+
+            // 取得幀列表（從 HTML 中的 data 屬性）
+            const frameDir = 'animation_frames';
+            
+            state.animationInterval = setInterval(() => {
+                const maxFrames = parseInt(progressSlider.max) + 1;
+                state.currentFrame = (state.currentFrame + 1) % maxFrames;
+                
+                updateFrame(trackId);
+            }, 500); // 2 fps
+        }
+
+        function pauseAnimation(trackId) {
+            if (!animationState[trackId]) return;
+            const state = animationState[trackId];
+            
+            state.isPlaying = false;
+            if (state.animationInterval) {
+                clearInterval(state.animationInterval);
+                state.animationInterval = null;
+            }
+        }
+
+        function resetAnimation(trackId) {
+            pauseAnimation(trackId);
+            if (!animationState[trackId]) initAnimation(trackId);
+            animationState[trackId].currentFrame = 0;
+            updateFrame(trackId);
+        }
+
+        function seekFrame(trackId, frameIndex) {
+            pauseAnimation(trackId);
+            if (!animationState[trackId]) initAnimation(trackId);
+            animationState[trackId].currentFrame = parseInt(frameIndex);
+            updateFrame(trackId);
+        }
+
+        function updateFrame(trackId) {
+            if (!animationState[trackId]) return;
+            const state = animationState[trackId];
+            
+            const frameImg = document.getElementById(`animation-frame-${trackId}`);
+            const progressSlider = document.getElementById(`progress-${trackId}`);
+            const frameCounter = document.getElementById(`frame-counter-${trackId}`);
+
+            if (!frameImg) return;
+
+            // 從 img 元素的 data 屬性取得幀資料夾路徑
+            const framesDir = frameImg.getAttribute('data-frames-dir') || 'animation_frames';
+            const frameNum = String(state.currentFrame).padStart(4, '0');
+            frameImg.src = `${framesDir}/frame_${frameNum}.png`;
+            
+            if (progressSlider) progressSlider.value = state.currentFrame;
+            if (frameCounter) {
+                const total = parseInt(progressSlider.max) + 1;
+                frameCounter.textContent = `${state.currentFrame + 1}/${total}`;
+            }
+        }
+
+        // 自動初始化所有動畫播放器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化所有 track_id 的動畫
+            const animationFrames = document.querySelectorAll('[id^="animation-frame-"]');
+            animationFrames.forEach(frameImg => {
+                const trackId = frameImg.id.replace('animation-frame-', '');
+                initAnimation(trackId);
+            });
+        });
+
+        // Auto-refresh every 5 minutes
+        setTimeout(function(){
+            location.reload();
+        }, 300000);
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
