@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pillar's Tropical Cyclone Forecast | Forecast</title>
+    <title>Pillar's Tropical Cyclone Forecast | SH242026</title>
     <style>
         * {
             margin: 0;
@@ -689,7 +689,7 @@
                     <div class="subtitle">Real-time FNV3 Ensemble Forecast System</div>
                 </div>
                 <div class="update-badge">
-                    ⏰ Updated: 2026-03-03 17:07:42
+                    ⏰ Updated: 2026-03-04 14:49:26
                 </div>
             </div>
         </header>
@@ -699,11 +699,117 @@
 
             <div class="storm-card">
                 <div class="storm-header">
-                    <div class="storm-title">No Active Systems</div>
-                    <div class="storm-id">N/A</div>
+                    <div class="storm-title">
+                        TWENTYFOUR <span class="alert-badge">LIVE</span>
+                    </div>
+                    <div class="storm-id">SH242026</div>
                 </div>
+
                 <div class="info-grid">
-                    <div class="info-item"><div class="info-label">Info</div><div class="info-value">Awaiting data…</div></div>
+                    <div class="info-item">
+                        <div class="info-label">🛰️ Current Time</div>
+                        <div class="info-value">040000 Z</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">📍 Current Position</div>
+                        <div class="info-value">14.3°S, 150.6°E</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">💨 Maximum Wind</div>
+                        <div class="info-value">35 kt</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">🔥 Intensity (Saffir-Simpson)</div>
+                        <div class="info-value intensity-value">
+                            <span class="intensity-dot" style="background: #00FFFF;"></span>
+                            <span class="legend-label">TS</span>
+                        </div>
+                    </div>
+                    <div class="info-item mobile-wind-radii" style="grid-column: span 2;">
+                        <div class="info-label">🌀 34 kt Wind Radii</div>
+                        <div class="info-value">NE: 065 / SE: 000 / SW: 080 / NW: 085 nm</div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend">
+                    <div class="legend-title">🎨 Intensity Scale (Saffir-Simpson)</div>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #CCCCCC;"></div>
+                            <div class="legend-label">TD (< 34 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00FFFF;"></div>
+                            <div class="legend-label">TS (34-63 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00FF00;"></div>
+                            <div class="legend-label">Cat 1 (64-82 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FFFF00;"></div>
+                            <div class="legend-label">Cat 2 (83-95 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FFA500;"></div>
+                            <div class="legend-label">Cat 3 (96-112 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FF0000;"></div>
+                            <div class="legend-label">Cat 4 (113-136 kt)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #800080;"></div>
+                            <div class="legend-label">Cat 5 (≥ 137 kt)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <!-- Animation Player -->
+            <div class="animation-container">
+                <div class="animation-title">🎬 Track Evolution Animation</div>
+                <div class="animation-player">
+                    <img id="animation-frame-SH242026" 
+                         src="animation_frames_SH242026/frame_0000.png" 
+                         alt="Animation" 
+                         class="animation-frame"
+                         data-frames-dir="animation_frames_SH242026">
+                    <div class="player-controls">
+                        <button class="control-btn" onclick="playAnimation('SH242026')">▶ Play</button>
+                        <button class="control-btn" onclick="pauseAnimation('SH242026')">⏸ Pause</button>
+                        <button class="control-btn" onclick="resetAnimation('SH242026')">⟲ Reset</button>
+                        <div class="progress-bar-container">
+                            <input type="range" id="progress-SH242026" class="progress-slider" min="0" max="34" value="0" 
+                                   oninput="seekFrame('SH242026', this.value)">
+                            <span id="frame-counter-SH242026" class="frame-counter">1/35</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    <strong>Controls:</strong> Play/Pause the animation or use the slider to manually seek through frames.
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="map-container">
+                <div class="map-title">📍 FNV3 Track Forecast Map</div>
+                <img src="SH242026_Forecast_Map.png" alt="SH242026 Forecast Map" class="map-image">
+                <div style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Note:</strong> Gray lines represent individual ensemble members (spaghetti plot). 
+                    Red line shows the ensemble mean track with 24-hour position markers. 
+                    Colored dots indicate intensity at 6-hour intervals.
+                </div>
+            </div>
+
+            <!-- JTWC Forecast Map Container -->
+            <div class="map-container jtwc-forecast-map" style="margin-top: 30px;">
+                <div class="map-title">🌐 JTWC Official Forecast</div>
+                <img src="jtwc_SH242026.gif" alt="JTWC Forecast" class="map-image" onerror="this.parentElement.style.display='none'">
+                <div class="map-description" style="margin-top: 15px; color: #666; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Source:</strong> Joint Typhoon Warning Center (JTWC) - U.S. Navy & Air Force
                 </div>
             </div>
         
