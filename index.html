@@ -53,15 +53,18 @@
             color: var(--text);
             transition: background .35s, color .35s;
         }
+        html, body { max-width: 100%; overflow-x: hidden; }
+        img { max-width: 100%; height: auto; }
 
         /* ── Header ────────────────────────────────────────────── */
         header {
             position: sticky; top: 0; z-index: 300;
-            height: var(--header-h);
+            min-height: var(--header-h);
             background: var(--surface);
             border-bottom: 1px solid var(--border);
             box-shadow: var(--shadow);
             display: flex; align-items: center;
+            flex-wrap: wrap;
             padding: 0 28px;
             gap: 16px;
             transition: background .35s, border .35s;
@@ -90,7 +93,7 @@
             display: block; margin-top: 1px;
         }
         .header-actions {
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
         }
         .update-badge {
             display: flex; align-items: center; gap: 6px;
@@ -99,7 +102,8 @@
             border-radius: 8px;
             padding: 6px 13px;
             font-size: .77em; font-weight: 600; color: var(--text-2);
-            white-space: nowrap;
+            white-space: normal;
+            line-height: 1.25;
         }
         .update-dot {
             width: 7px; height: 7px; border-radius: 50%;
@@ -159,6 +163,7 @@
             font-size: 2em; font-weight: 800;
             letter-spacing: -.5px; color: var(--text);
             line-height: 1.1;
+            overflow-wrap: anywhere;
         }
         .storm-subtitle {
             font-size: .8em; color: var(--text-3);
@@ -212,6 +217,7 @@
             border: 1px solid var(--border);
             border-radius: 11px;
             padding: 14px 16px;
+            min-width: 0;
             transition: transform .18s, box-shadow .18s;
         }
         .info-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
@@ -224,6 +230,7 @@
         .info-value {
             font-size: 1.18em; font-weight: 700; color: var(--text);
             line-height: 1.2;
+            overflow-wrap: anywhere;
         }
         .intensity-value { display: flex; align-items: center; gap: 9px; }
         .intensity-dot {
@@ -285,7 +292,7 @@
         /* ── Maps Grid ──────────────────────────────────────────── */
         .maps-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 24px;
         }
 
@@ -373,17 +380,19 @@
         .control-btn:hover { transform: translateY(-1px); filter: brightness(1.07); }
         .control-btn:active { transform: translateY(0); }
         .progress-bar-container {
-            flex: 1; min-width: 160px; display: flex; align-items: center; gap: 8px;
+            flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
         }
         .progress-slider, .speed-slider {
             flex: 1; height: 4px; border-radius: 2px;
             background: var(--border); outline: none;
             -webkit-appearance: none; cursor: pointer;
+            appearance: none;
             accent-color: var(--accent);
         }
         .progress-slider::-webkit-slider-thumb,
         .speed-slider::-webkit-slider-thumb {
             -webkit-appearance: none; width: 14px; height: 14px;
+            appearance: none;
             border-radius: 50%; cursor: pointer;
             background: var(--accent);
             box-shadow: 0 1px 5px rgba(0,0,0,.25);
@@ -443,10 +452,18 @@
             .maps-grid { grid-template-columns: 1fr; }
             .info-grid  { grid-template-columns: 1fr 1fr; }
             .header-brand small { display: none; }
+            header { padding: 10px 16px; gap: 10px; }
+            .header-actions { width: 100%; justify-content: space-between; }
         }
         @media (max-width: 600px) {
             .page { padding: 16px 12px 40px; }
-            header { padding: 0 16px; }
+            header { padding: 10px 12px; }
+            .header-brand { width: 100%; min-width: 0; }
+            .brand-icon { width: 32px; height: 32px; font-size: 1em; }
+            .brand-text h1 { font-size: .95em; }
+            .header-actions { gap: 8px; }
+            .update-badge { flex: 1 1 170px; padding: 6px 10px; font-size: .72em; }
+            .theme-btn { flex: 0 0 auto; padding: 7px 10px; font-size: .74em; }
             .storm-title { font-size: 1.55em; }
             .info-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
             .span-2 { grid-column: span 1; }
@@ -455,12 +472,20 @@
             .footer-inner { grid-template-columns: 1fr; }
             .footer-links { align-items: flex-start; }
             .controls-row { flex-wrap: wrap; }
-            .progress-bar-container { min-width: 100%; order: 10; }
+            .control-btn { flex: 1 1 calc(33.333% - 8px); min-width: 88px; text-align: center; }
+            .progress-bar-container { width: 100%; min-width: 100%; order: 10; }
             .speed-row { justify-content: flex-start; }
+            .speed-slider { width: 100%; max-width: 220px; }
+            .radii-value { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+            .map-note { font-size: .78em; }
         }
         @media (max-width: 380px) {
             .info-grid { grid-template-columns: 1fr; }
             .storm-title { font-size: 1.3em; }
+            .storm-badges { width: 100%; }
+            .badge-cat, .badge-id, .badge-live { padding: 5px 9px; font-size: .72em; }
+            .control-btn { flex: 1 1 100%; }
+            .radii-value { grid-template-columns: 1fr; }
         }
         @media (min-width: 900px) {
             .kbd-hint { display: inline; }
@@ -485,7 +510,7 @@
         <div class="header-actions">
             <div class="update-badge">
                 <span class="update-dot"></span>
-                Updated: 2026-05-10 22:22:04
+                Updated: 2026-05-10 22:31:09
             </div>
             <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 Dark</button>
         </div>
