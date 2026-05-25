@@ -1,0 +1,20 @@
+# 排除 Claude 內部記憶與舊輸出目錄
+.claude/
+Typhoon_Analysis_Forecast/
+
+# 排除大型資料目錄
+deepmind_weather_downloads_2026/
+deepmind_weather_ensemble_mean_downloads_2026/
+deepmind_weather_cyclogenesis_2026/
+
+# 排除日誌與暫存
+forecast_log.txt
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# 排除本機 Python 快取
+*.egg-info/
+dist/
+build/
