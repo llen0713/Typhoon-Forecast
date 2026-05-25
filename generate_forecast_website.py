@@ -264,7 +264,7 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
                         <div class="zoom-hint">🔍 Click to enlarge</div>
                     </div>
                     <div class="genesis-legend">
-                        <p class="map-note" style="margin-top:10px;">
+                        <p class="map-note" style="margin-top:0;">
                             Circles = ensemble members at each 6-hr step, colored by minimum sea level pressure.
                             Gray lines = individual ensemble tracks (0–360 h).
                             Data sourced from Google DeepMind FNV3.
@@ -838,9 +838,7 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
     // ── Theme ─────────────────────────────────────────────────────────────────
     (function() {{
         const hour = new Date().getHours();
-        const timeDefault = (hour >= 18 || hour < 6) ? 'dark' : 'light';
-        const saved = localStorage.getItem('theme') || timeDefault;
-        applyTheme(saved, false);
+        applyTheme((hour >= 18 || hour < 6) ? 'dark' : 'light', false);
     }})();
 
     function applyTheme(theme, save=true) {{
