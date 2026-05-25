@@ -846,7 +846,9 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
     <script>
     // ── Theme ─────────────────────────────────────────────────────────────────
     (function() {{
-        const saved = localStorage.getItem('theme') || 'light';
+        const hour = new Date().getHours();
+        const timeDefault = (hour >= 18 || hour < 6) ? 'dark' : 'light';
+        const saved = localStorage.getItem('theme') || timeDefault;
         applyTheme(saved, false);
     }})();
 
