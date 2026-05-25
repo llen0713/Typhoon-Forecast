@@ -77,10 +77,32 @@ CYCLOGENESIS_FILENAME = f"FNV3_{YEAR}_{MONTH}_{DAY}T{HOUR}_{MINUTE}_cyclogenesis
 CYCLOGENESIS_CSV_PATH = os.path.join(CYCLOGENESIS_DIR, CYCLOGENESIS_FILENAME)
 
 
-def _auto_detect_track_ids(mean_dir: str) -> list[str]:
+def _auto_detect_track_ids(mean_dir: str, preferred_path: str | None = None) -> list[str]:
     """從 MEAN_DIR 內最新的 CSV 自動偵測有效颱風 TRACK_ID。
+    若提供 preferred_path 且檔案存在，優先使用該檔案（當前 cycle）。
     只保留 WP[0-8]X20XX，排除 WP9X（擾動）。
     """
+    def _read_ids(path: str) -> list[str]:
+        print(f"[AUTO-DETECT] 讀取: {os.path.basename(path)}")
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                content = ''.join(line for line in f if not line.startswith('#'))
+            df = pd.read_csv(io.StringIO(content))
+            col = next((c for c in df.columns if c.lower() == 'track_id'), None)
+            if col is None:
+                print("[AUTO-DETECT] 找不到 track_id 欄位")
+                return []
+            ids = df[col].dropna().astype(str).unique().tolist()
+            valid = sorted(tid for tid in ids if re.match(r'^WP[0-8]\d20\d{2}$', tid))
+            print(f"[AUTO-DETECT] 偵測到颱風: {valid}")
+            return valid
+        except Exception as e:
+            print(f"[AUTO-DETECT] 讀取失敗: {e}")
+            return []
+
+    if preferred_path and os.path.exists(preferred_path):
+        return _read_ids(preferred_path)
+
     if not os.path.isdir(mean_dir):
         return []
     csvs = sorted(
@@ -92,23 +114,7 @@ def _auto_detect_track_ids(mean_dir: str) -> list[str]:
     if not csvs:
         print("[AUTO-DETECT] MEAN_DIR 內無可用 CSV")
         return []
-    latest = csvs[0]
-    print(f"[AUTO-DETECT] 讀取: {os.path.basename(latest)}")
-    try:
-        with open(latest, 'r', encoding='utf-8') as f:
-            content = ''.join(line for line in f if not line.startswith('#'))
-        df = pd.read_csv(io.StringIO(content))
-        col = next((c for c in df.columns if c.lower() == 'track_id'), None)
-        if col is None:
-            print("[AUTO-DETECT] 找不到 track_id 欄位")
-            return []
-        ids = df[col].dropna().astype(str).unique().tolist()
-        valid = sorted(tid for tid in ids if re.match(r'^WP[0-8]\d20\d{2}$', tid))
-        print(f"[AUTO-DETECT] 偵測到颱風: {valid}")
-        return valid
-    except Exception as e:
-        print(f"[AUTO-DETECT] 讀取失敗: {e}")
-        return []
+    return _read_ids(csvs[0])
 
 
 def _jtwc_url_key(track_id: str) -> str:
@@ -1412,6 +1418,11 @@ def main():
                 if chunk:
                     f.write(chunk)
         print(f"[DL-MEAN] saved to {mean_csv_path}")
+
+    # 用當前 cycle 的 mean CSV 重新偵測，確保不會抓到舊測試資料
+    global TARGET_TRACK_IDS, JTWC_FORECAST_URLS, JTWC_TEXT_URLS
+    TARGET_TRACK_IDS = _auto_detect_track_ids(MEAN_DIR, preferred_path=mean_csv_path)
+    JTWC_FORECAST_URLS, JTWC_TEXT_URLS = _build_jtwc_urls(TARGET_TRACK_IDS)
 
     # 下載 Cyclogenesis 潛勢 CSV
     # 優先使用與當期日期相符的檔案，不存在時嘗試下載，下載失敗才退而用目錄中最新檔
