@@ -118,7 +118,7 @@ def _auto_detect_track_ids(mean_dir: str, preferred_path: str | None = None) -> 
 
 
 def _jtwc_url_key(track_id: str) -> str:
-    """WP042026 → 'wp0426'"""
+    """WP062026 → 'wp0626'"""
     m = re.match(r'^WP(\d{2})(\d{4})$', track_id)
     if not m:
         return track_id.lower()
