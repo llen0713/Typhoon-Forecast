@@ -13,7 +13,7 @@ if %errorlevel% == 0 (
 for /f "tokens=*" %%i in ('powershell -command "Get-Date -Format \"yyyy-MM-dd HH:mm UTC\""') do set TIMESTAMP=%%i
 git commit -m "Auto update: %TIMESTAMP%"
 
-git push origin main >> forecast_log.txt 2>&1
+git push origin main
 if %errorlevel% == 0 (
     echo [INFO] 成功推送至 GitHub
 ) else (
