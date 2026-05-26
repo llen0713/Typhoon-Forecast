@@ -70,6 +70,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; CopilotDownloader/1.0)"}
 # 輸出目錄
 OUTPUT_DIR = "docs"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+open(os.path.join(OUTPUT_DIR, ".nojekyll"), "w").close()
 
 FILENAME = f"FNV3_{YEAR}_{MONTH}_{DAY}T{HOUR}_{MINUTE}_paired.csv"
 CSV_PATH = os.path.join(ENSEMBLE_DIR, FILENAME)
