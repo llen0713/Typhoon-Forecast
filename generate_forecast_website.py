@@ -85,22 +85,6 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
         jtwc_wind = f"{jtwc_data.get('max_winds_kt', 'N/A')} kt" if 'max_winds_kt' in jtwc_data else ''
         jtwc_gusts = f"{jtwc_data.get('gusts', 'N/A')} kt" if 'gusts' in jtwc_data else ''
 
-        wind_radii_html = ""
-        for kt_label in (34, 50, 64):
-            key = f"wind_radii_{kt_label}kt"
-            if key in jtwc_data:
-                radii = jtwc_data[key]
-                wind_radii_html += f"""
-                        <div class="info-item span-2">
-                            <div class="info-label">🌀 {kt_label} kt Wind Radii</div>
-                            <div class="info-value radii-value">
-                                <span class="radii-quad">NE: {radii.get('NE', 'N/A')} nm</span>
-                                <span class="radii-quad">SE: {radii.get('SE', 'N/A')} nm</span>
-                                <span class="radii-quad">SW: {radii.get('SW', 'N/A')} nm</span>
-                                <span class="radii-quad">NW: {radii.get('NW', 'N/A')} nm</span>
-                            </div>
-                        </div>"""
-
         display_title = storm_name if storm_name else "Active System"
         display_time = jtwc_update if jtwc_update else "N/A"
         display_lat = jtwc_lat if jtwc_lat else curr_lat
@@ -198,7 +182,7 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
                                 <span class="intensity-dot" style="background:{curr_cat_color};"></span>
                                 <span>{curr_cat}</span>
                             </div>
-                        </div>{wind_radii_html}
+                        </div>
                     </div>
                 </div>
             </div>

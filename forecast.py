@@ -491,31 +491,6 @@ def scrape_jtwc_text_product(track_id: str) -> dict:
         if m_gusts:
             info['gusts'] = int(m_gusts.group(1))
 
-        # 34/50/64 KT 風圈: RADIUS OF XXX KT WINDS - NE/SE/SW/NW quadrants
-        def _parse_radii(block: str) -> dict:
-            res = {}
-            ne_match = re.search(r"(\d+)\s*NM\s+NORTHEAST", block, re.IGNORECASE)
-            if ne_match:
-                res['NE'] = ne_match.group(1)
-            se_match = re.search(r"(\d+)\s*NM\s+SOUTHEAST", block, re.IGNORECASE)
-            if se_match:
-                res['SE'] = se_match.group(1)
-            sw_match = re.search(r"(\d+)\s*NM\s+SOUTHWEST", block, re.IGNORECASE)
-            if sw_match:
-                res['SW'] = sw_match.group(1)
-            nw_match = re.search(r"(\d+)\s*NM\s+NORTHWEST", block, re.IGNORECASE)
-            if nw_match:
-                res['NW'] = nw_match.group(1)
-            return res
-
-        for kt in (34, 50, 64):
-            radii_pattern = rf"RADIUS\s+OF\s+0?{kt}\s+KT\s+WINDS\s*-?\s*(.*?)(?:\n\n|$)"
-            m_block = re.search(radii_pattern, text, re.IGNORECASE | re.DOTALL)
-            if m_block:
-                radii = _parse_radii(m_block.group(1))
-                if radii:
-                    info[f'wind_radii_{kt}kt'] = radii
-
         if info:
             print(f"[JTWC] 解析成功: {info}")
         else:
