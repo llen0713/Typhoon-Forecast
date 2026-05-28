@@ -1485,6 +1485,11 @@ def main():
             # 生成幀序列（用於網頁動畫）
             print("[ANIMATION] 正在生成幀序列...")
             frames_dir = os.path.join(OUTPUT_DIR, f"animation_frames_{TARGET_TRACK_ID}")
+            # 清除舊幀，避免幀數減少時殘留上次多餘的圖
+            if os.path.isdir(frames_dir):
+                for _old in os.listdir(frames_dir):
+                    if _old.startswith("frame_") and _old.endswith(".png"):
+                        os.remove(os.path.join(frames_dir, _old))
             frame_paths = generate_frame_sequence(df, mean_df, init_time, TARGET_TRACK_ID, frames_dir, max_frames=72)
 
             # 將幀序列輸出成 GIF
