@@ -13,6 +13,12 @@ if %errorlevel% == 0 (
 for /f "tokens=*" %%i in ('powershell -command "Get-Date -Format \"yyyy-MM-dd HH:mm UTC\""') do set TIMESTAMP=%%i
 git commit -m "Auto update: %TIMESTAMP%"
 
+git pull --rebase origin main
+if %errorlevel% neq 0 (
+    echo [ERROR] git pull --rebase 失敗，請手動處理衝突
+    exit /b 1
+)
+
 git push origin main
 if %errorlevel% == 0 (
     echo [INFO] 成功推送至 GitHub
