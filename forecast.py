@@ -1364,20 +1364,56 @@ def plot_genesis_potential_map(csv_path: str, save_path: str):
 
 
 def main():
-    # 若檔案不存在，才下載 Ensemble 檔；否則直接讀取
-    if not os.path.exists(CSV_PATH):
+    global YEAR, MONTH, DAY, HOUR, MINUTE, FILENAME, CSV_PATH, CYCLOGENESIS_FILENAME, CYCLOGENESIS_CSV_PATH
+
+    # 若目標 cycle 檔案不存在，嘗試下載；若 404 則回退至前一個 cycle（最多 4 次）
+    def _try_download_cycle(cycle: datetime):
+        y = cycle.strftime("%Y")
+        m = cycle.strftime("%m")
+        d = cycle.strftime("%d")
+        h = cycle.strftime("%H")
+        fname = f"FNV3_{y}_{m}_{d}T{h}_00_paired.csv"
+        path = os.path.join(ENSEMBLE_DIR, fname)
+        if os.path.exists(path):
+            return cycle, path
         url = (
             "https://deepmind.google.com/science/weatherlab/download/cyclones/FNV3/ensemble/paired/csv/"
-            f"FNV3_{YEAR}_{MONTH}_{DAY}T{HOUR}_{MINUTE}_paired.csv"
+            f"{fname}"
         )
         print(f"[DL] GET {url}")
         resp = requests.get(url, stream=True, timeout=60)
+        if resp.status_code == 404:
+            return None, None
         resp.raise_for_status()
-        with open(CSV_PATH, "wb") as f:
+        with open(path, "wb") as f:
             for chunk in resp.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
-        print(f"[DL] saved to {CSV_PATH}")
+        print(f"[DL] saved to {path}")
+        return cycle, path
+
+    _cycle_dt = _latest_cycle()
+    _resolved_cycle = None
+    for _i in range(5):
+        _c, _p = _try_download_cycle(_cycle_dt - timedelta(hours=6 * _i))
+        if _c is not None:
+            _resolved_cycle = _c
+            break
+    if _resolved_cycle is None:
+        raise RuntimeError("[DL] 無法取得最近 5 個 cycle 的 ensemble CSV，請稍後重試")
+
+    # 更新 cycle 相關全域變數
+    YEAR   = _resolved_cycle.strftime("%Y")
+    MONTH  = _resolved_cycle.strftime("%m")
+    DAY    = _resolved_cycle.strftime("%d")
+    HOUR   = _resolved_cycle.strftime("%H")
+    MINUTE = "00"
+    FILENAME = f"FNV3_{YEAR}_{MONTH}_{DAY}T{HOUR}_{MINUTE}_paired.csv"
+    CSV_PATH = os.path.join(ENSEMBLE_DIR, FILENAME)
+    CYCLOGENESIS_FILENAME = f"FNV3_{YEAR}_{MONTH}_{DAY}T{HOUR}_{MINUTE}_cyclogenesis.csv"
+    CYCLOGENESIS_CSV_PATH = os.path.join(CYCLOGENESIS_DIR, CYCLOGENESIS_FILENAME)
+    if _resolved_cycle != _latest_cycle():
+        print(f"[DL] 回退至 cycle: {_resolved_cycle.strftime('%Y-%m-%d %HZ')}")
 
     # 下載 Ensemble Mean 檔
     mean_csv_path = os.path.join(MEAN_DIR, FILENAME)
