@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pillar's Tropical Cyclone Forecast | WP072026 / WP082026</title>
+    <title>Pillar's Tropical Cyclone Forecast | WP072026</title>
     <style>
         /* ── Design Tokens ─────────────────────────────────────── */
         :root {
@@ -528,7 +528,7 @@
         <div class="header-actions">
             <div class="update-badge">
                 <span class="update-dot"></span>
-                Updated: 2026-06-23 20:46:04
+                Updated: 2026-06-24 14:45:31
             </div>
             <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 Dark</button>
         </div>
@@ -563,7 +563,7 @@
             </div>
 
             <div class="storm-card" id="card-WP072026">
-                <div class="intensity-stripe" style="background:#FFA500;"></div>
+                <div class="intensity-stripe" style="background:#00FF00;"></div>
                 <div class="storm-card-inner">
                     <div class="storm-header">
                         <div>
@@ -571,7 +571,7 @@
                             <div class="storm-subtitle">Western Pacific Tropical Cyclone</div>
                         </div>
                         <div class="storm-badges">
-                            <span class="badge-cat" style="background:#FFA500;color:#000;">Cat3</span>
+                            <span class="badge-cat" style="background:#00FF00;color:#000;">Cat1</span>
                             <span class="badge-id">WP072026</span>
                             <span class="badge-live"><span class="live-dot"></span>LIVE</span>
                         </div>
@@ -580,22 +580,22 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <div class="info-label">⏱ Obs Time</div>
-                            <div class="info-value">230600 Z</div>
+                            <div class="info-value">240000 Z</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">📍 Position</div>
-                            <div class="info-value">19.1°N, 124.8°E</div>
+                            <div class="info-value">21.0°N, 124.6°E</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">💨 Max Wind</div>
-                            <div class="info-value">110 kt</div>
+                            <div class="info-value">75 kt</div>
                         </div>
                         <div class="info-item">
 
                             <div class="info-label">🔥 Intensity</div>
                             <div class="info-value intensity-value">
-                                <span class="intensity-dot" style="background:#FFA500;"></span>
-                                <span>Cat3</span>
+                                <span class="intensity-dot" style="background:#00FF00;"></span>
+                                <span>Cat1</span>
                             </div>
                         </div>
                     </div>
@@ -615,7 +615,7 @@
                              alt="Animation Frame"
                              class="animation-frame"
                              data-frames-dir="animation_frames_WP072026"
-                             data-all-frames='["frame_0000.png", "frame_0001.png", "frame_0002.png", "frame_0003.png", "frame_0004.png", "frame_0005.png", "frame_0006.png", "frame_0007.png", "frame_0008.png", "frame_0009.png", "frame_0010.png", "frame_0011.png", "frame_0012.png", "frame_0013.png", "frame_0014.png", "frame_0015.png", "frame_0016.png", "frame_0017.png", "frame_0018.png", "frame_0019.png", "frame_0020.png", "frame_0021.png", "frame_0022.png", "frame_0023.png", "frame_0024.png"]'>
+                             data-all-frames='["frame_0000.png", "frame_0001.png", "frame_0002.png", "frame_0003.png", "frame_0004.png", "frame_0005.png", "frame_0006.png", "frame_0007.png", "frame_0008.png", "frame_0009.png", "frame_0010.png", "frame_0011.png", "frame_0012.png", "frame_0013.png", "frame_0014.png", "frame_0015.png", "frame_0016.png", "frame_0017.png", "frame_0018.png", "frame_0019.png"]'>
                         <div class="zoom-hint">🔍 Click to enlarge</div>
                     </div>
                     <div class="player-controls">
@@ -625,9 +625,9 @@
                             <button class="control-btn secondary" onclick="resetAnimation('WP072026')">⟲ Reset</button>
                             <div class="progress-bar-container">
                                 <input type="range" id="progress-WP072026" class="progress-slider"
-                                       min="0" max="24" value="0"
+                                       min="0" max="19" value="0"
                                        oninput="seekFrame('WP072026', this.value)">
-                                <span id="frame-counter-WP072026" class="frame-counter">1/25</span>
+                                <span id="frame-counter-WP072026" class="frame-counter">1/20</span>
                             </div>
                         </div>
                         <div class="controls-row speed-row">
@@ -666,118 +666,6 @@
                     </div>
                     <div class="map-image-wrapper" onclick="openLightbox(this.querySelector('img').src)">
                         <img src="jtwc_WP072026.gif" alt="JTWC Forecast" class="map-image"
-                             onerror="this.closest('.panel').style.display='none'">
-                        <div class="zoom-hint">🔍 Click to enlarge</div>
-                    </div>
-                    <p class="map-note">Source: Joint Typhoon Warning Center (JTWC) — U.S. Navy &amp; Air Force</p>
-                </div>
-            </div>
-        
-
-            <div class="storm-card" id="card-WP082026">
-                <div class="intensity-stripe" style="background:#00FFFF;"></div>
-                <div class="storm-card-inner">
-                    <div class="storm-header">
-                        <div>
-                            <div class="storm-title">HIGOS</div>
-                            <div class="storm-subtitle">Western Pacific Tropical Cyclone</div>
-                        </div>
-                        <div class="storm-badges">
-                            <span class="badge-cat" style="background:#00FFFF;color:#000;">TS</span>
-                            <span class="badge-id">WP082026</span>
-                            <span class="badge-live"><span class="live-dot"></span>LIVE</span>
-                        </div>
-                    </div>
-
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">⏱ Obs Time</div>
-                            <div class="info-value">230600 Z</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">📍 Position</div>
-                            <div class="info-value">14.8°N, 144.9°E</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">💨 Max Wind</div>
-                            <div class="info-value">35 kt</div>
-                        </div>
-                        <div class="info-item">
-
-                            <div class="info-label">🔥 Intensity</div>
-                            <div class="info-value intensity-value">
-                                <span class="intensity-dot" style="background:#00FFFF;"></span>
-                                <span>TS</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-
-            <div class="panel" id="anim-section-WP082026">
-                <div class="panel-header">
-                    <span class="panel-icon">🎬</span>
-                    <span>Track Evolution Animation</span>
-                </div>
-                <div class="animation-player">
-                    <div class="frame-wrapper" onclick="openLightbox(document.getElementById('animation-frame-WP082026').src)">
-                        <img id="animation-frame-WP082026"
-                             src="animation_frames_WP082026/frame_0000.png"
-                             alt="Animation Frame"
-                             class="animation-frame"
-                             data-frames-dir="animation_frames_WP082026"
-                             data-all-frames='["frame_0000.png", "frame_0001.png", "frame_0002.png", "frame_0003.png", "frame_0004.png", "frame_0005.png", "frame_0006.png", "frame_0007.png", "frame_0008.png", "frame_0009.png", "frame_0010.png", "frame_0011.png", "frame_0012.png", "frame_0013.png", "frame_0014.png", "frame_0015.png", "frame_0016.png", "frame_0017.png", "frame_0018.png", "frame_0019.png", "frame_0020.png", "frame_0021.png", "frame_0022.png"]'>
-                        <div class="zoom-hint">🔍 Click to enlarge</div>
-                    </div>
-                    <div class="player-controls">
-                        <div class="controls-row">
-                            <button class="control-btn" onclick="playAnimation('WP082026')" id="btn-play-WP082026">▶ Play</button>
-                            <button class="control-btn secondary" onclick="pauseAnimation('WP082026')">⏸ Pause</button>
-                            <button class="control-btn secondary" onclick="resetAnimation('WP082026')">⟲ Reset</button>
-                            <div class="progress-bar-container">
-                                <input type="range" id="progress-WP082026" class="progress-slider"
-                                       min="0" max="22" value="0"
-                                       oninput="seekFrame('WP082026', this.value)">
-                                <span id="frame-counter-WP082026" class="frame-counter">1/23</span>
-                            </div>
-                        </div>
-                        <div class="controls-row speed-row">
-                            <span class="speed-label">⚡ Speed:</span>
-                            <input type="range" id="speed-WP082026" class="speed-slider"
-                                   min="1" max="8" value="2" step="0.5"
-                                   oninput="updateSpeed('WP082026', this.value)">
-                            <span id="speed-val-WP082026" class="speed-value">2×</span>
-                            <span class="kbd-hint"><kbd>Space</kbd> play/pause &nbsp;<kbd>←</kbd><kbd>→</kbd> seek</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="maps-grid">
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-icon">🗺</span>
-                        <span>FNV3 Ensemble Track Forecast</span>
-                    </div>
-                    <div class="map-image-wrapper" onclick="openLightbox(this.querySelector('img').src)">
-                        <img src="WP082026_Forecast_Map.png" alt="WP082026 Forecast Map" class="map-image"
-                             onload="this.classList.remove('loading')" onerror="this.classList.add('img-error')">
-                        <div class="zoom-hint">🔍 Click to enlarge</div>
-                    </div>
-                    <p class="map-note">
-                        Gray = ensemble members &nbsp;·&nbsp; Red = mean track &nbsp;·&nbsp;
-                        Cone = uncertainty &nbsp;·&nbsp; Dots = 6-hr intensity &nbsp;·&nbsp; ★ = init
-                    </p>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-icon">🛰</span>
-                        <span>JTWC Official Forecast</span>
-                    </div>
-                    <div class="map-image-wrapper" onclick="openLightbox(this.querySelector('img').src)">
-                        <img src="jtwc_WP082026.gif" alt="JTWC Forecast" class="map-image"
                              onerror="this.closest('.panel').style.display='none'">
                         <div class="zoom-hint">🔍 Click to enlarge</div>
                     </div>
