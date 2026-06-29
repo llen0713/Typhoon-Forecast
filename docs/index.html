@@ -528,7 +528,7 @@
         <div class="header-actions">
             <div class="update-badge">
                 <span class="update-dot"></span>
-                Updated: 2026-06-29 09:05:15
+                Updated: 2026-06-29 09:18:11
             </div>
             <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 Dark</button>
         </div>
@@ -779,8 +779,14 @@
         });
     });
 
-    // Auto-refresh every 5 minutes
-    setTimeout(() => location.reload(), 300000);
+    // Auto-refresh at HH:30 every hour
+    (function scheduleRefresh() {
+        const now = new Date();
+        const next = new Date(now);
+        next.setMinutes(30, 0, 0);
+        if (now.getMinutes() >= 30) next.setHours(next.getHours() + 1);
+        setTimeout(() => location.reload(), next - now);
+    })();
     </script>
 </body>
 </html>

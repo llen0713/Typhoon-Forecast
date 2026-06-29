@@ -983,8 +983,14 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
         }});
     }});
 
-    // Auto-refresh every 5 minutes
-    setTimeout(() => location.reload(), 300000);
+    // Auto-refresh at HH:30 every hour
+    (function scheduleRefresh() {{
+        const now = new Date();
+        const next = new Date(now);
+        next.setMinutes(30, 0, 0);
+        if (now.getMinutes() >= 30) next.setHours(next.getHours() + 1);
+        setTimeout(() => location.reload(), next - now);
+    }})();
     </script>
 </body>
 </html>"""
