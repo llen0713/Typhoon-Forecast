@@ -522,13 +522,13 @@
             <div class="brand-icon">🌀</div>
             <div class="brand-text">
                 <h1>Pillar's Tropical Cyclone Forecast</h1>
-                <small>Real-time FNV3 Ensemble Forecast System · Western Pacific</small>
+                <small>Real-time FNV3 / GENC Ensemble Forecast System · Western Pacific</small>
             </div>
         </div>
         <div class="header-actions">
             <div class="update-badge">
                 <span class="update-dot"></span>
-                Updated: 2026-06-29 08:45:17
+                Updated: 2026-06-29 08:57:42
             </div>
             <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 Dark</button>
         </div>
@@ -562,6 +562,31 @@
                 </div>
             </div>
 
+            <div class="panel genesis-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🌏</span>
+                    <span>Western Pacific Genesis Potential — GENC Ensemble Overview</span>
+                </div>
+                <div class="genesis-body">
+                    <div class="map-image-wrapper genesis-map-wrapper"
+                         onclick="openLightbox(this.querySelector('img').src)">
+                        <img src="WP_Genesis_Potential_GENC.png"
+                             alt="Western Pacific Genesis Potential"
+                             class="map-image genesis-map-img"
+                             onload="this.classList.remove('loading')"
+                             onerror="this.closest('.genesis-panel').style.display='none'">
+                        <div class="zoom-hint">🔍 Click to enlarge</div>
+                    </div>
+                    <div class="genesis-legend">
+                        <p class="map-note" style="margin-top:0;">
+                            Circles = ensemble members at each 6-hr step, colored by minimum sea level pressure.
+                            Gray lines = individual ensemble tracks (0–360 h).
+                            Data sourced from Google DeepMind GENC.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div class="storm-card">
                 <div class="intensity-stripe" style="background:#64748b;"></div>
                 <div class="storm-card-inner">
@@ -584,7 +609,7 @@
                 <div class="footer-brand">
                     <h3>Pillar's Tropical Cyclone Forecast System</h3>
                     <p>
-                        Ensemble track forecasts powered by the DeepMind FNV3 model.<br>
+                        Ensemble track forecasts powered by DeepMind FNV3 &amp; GENC models.<br>
                         Official intensity guidance from JTWC. Data refreshed automatically.
                     </p>
                 </div>

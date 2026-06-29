@@ -54,6 +54,13 @@ os.makedirs(ENSEMBLE_DIR, exist_ok=True)
 os.makedirs(MEAN_DIR, exist_ok=True)
 os.makedirs(CYCLOGENESIS_DIR, exist_ok=True)
 
+GENC_ENSEMBLE_DIR = "deepmind_weather_genc_downloads_2026"
+GENC_MEAN_DIR = "deepmind_weather_genc_ensemble_mean_downloads_2026"
+GENC_CYCLOGENESIS_DIR = "deepmind_weather_genc_cyclogenesis_2026"
+os.makedirs(GENC_ENSEMBLE_DIR, exist_ok=True)
+os.makedirs(GENC_MEAN_DIR, exist_ok=True)
+os.makedirs(GENC_CYCLOGENESIS_DIR, exist_ok=True)
+
 # Base URLs
 ENSEMBLE_URL = (
     "https://deepmind.google.com/science/weatherlab/download/cyclones/FNV3/ensemble/paired/csv/FNV3_{year}_{month}_{day}T{hour}_{minute}_paired.csv"
@@ -63,6 +70,16 @@ ENSEMBLE_MEAN_URL = (
 )
 CYCLOGENESIS_URL = (
     "https://deepmind.google.com/science/weatherlab/download/cyclones/FNV3/ensemble/cyclogenesis/csv/FNV3_{year}_{month}_{day}T{hour}_{minute}_cyclogenesis.csv"
+)
+
+GENC_ENSEMBLE_URL = (
+    "https://deepmind.google.com/science/weatherlab/download/cyclones/GENC/ensemble/paired/csv/GENC_{year}_{month}_{day}T{hour}_{minute}_paired.csv"
+)
+GENC_ENSEMBLE_MEAN_URL = (
+    "https://deepmind.google.com/science/weatherlab/download/cyclones/GENC/ensemble_mean/paired/csv/GENC_{year}_{month}_{day}T{hour}_{minute}_paired.csv"
+)
+GENC_CYCLOGENESIS_URL = (
+    "https://deepmind.google.com/science/weatherlab/download/cyclones/GENC/ensemble/cyclogenesis/csv/GENC_{year}_{month}_{day}T{hour}_{minute}_cyclogenesis.csv"
 )
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; CopilotDownloader/1.0)"}
@@ -78,7 +95,7 @@ CYCLOGENESIS_FILENAME = f"FNV3_{YEAR}_{MONTH}_{DAY}T{HOUR}_{MINUTE}_cyclogenesis
 CYCLOGENESIS_CSV_PATH = os.path.join(CYCLOGENESIS_DIR, CYCLOGENESIS_FILENAME)
 
 
-def _auto_detect_track_ids(mean_dir: str, preferred_path: str | None = None) -> list[str]:
+def _auto_detect_track_ids(mean_dir: str, preferred_path: str | None = None, model_prefix: str = "FNV3") -> list[str]:
     """從 MEAN_DIR 內最新的 CSV 自動偵測有效颱風 TRACK_ID。
     若提供 preferred_path 且檔案存在，優先使用該檔案（當前 cycle）。
     只保留 WP[0-8]X20XX，排除 WP9X（擾動）。
@@ -108,7 +125,7 @@ def _auto_detect_track_ids(mean_dir: str, preferred_path: str | None = None) -> 
         return []
     csvs = sorted(
         [os.path.join(mean_dir, f) for f in os.listdir(mean_dir)
-         if f.startswith("FNV3_") and f.endswith(".csv")],
+         if f.startswith(f"{model_prefix}_") and f.endswith(".csv")],
         key=os.path.getmtime,
         reverse=True,
     )
@@ -232,21 +249,23 @@ TARGET_TRACK_IDS = _auto_detect_track_ids(MEAN_DIR)
 JTWC_FORECAST_URLS, JTWC_TEXT_URLS = _build_jtwc_urls(TARGET_TRACK_IDS)
 
 
-def download_jtwc_image(track_id: str, output_dir: str = "Typhoon_Analysis_Forecast") -> str:
+def download_jtwc_image(track_id: str, output_dir: str = "Typhoon_Analysis_Forecast", jtwc_forecast_urls: dict = None) -> str:
     """下載 JTWC 預報圖
-    
+
     Args:
         track_id: 風暴追蹤 ID
         output_dir: 輸出目錄
-        
+        jtwc_forecast_urls: 自訂 URL 字典（None 時使用全域 JTWC_FORECAST_URLS）
+
     Returns:
         下載的圖片檔案路徑，如果失敗則返回 None
     """
-    if track_id not in JTWC_FORECAST_URLS:
+    urls = jtwc_forecast_urls if jtwc_forecast_urls is not None else JTWC_FORECAST_URLS
+    if track_id not in urls:
         print(f"[JTWC] 無對應的 JTWC URL: {track_id}")
         return None
-    
-    url = JTWC_FORECAST_URLS[track_id]
+
+    url = urls[track_id]
     output_path = os.path.join(output_dir, f"jtwc_{track_id}.gif")
     
     try:
@@ -437,9 +456,10 @@ def load_forecast_dataframe(csv_path: str, track_id: str) -> tuple[pd.DataFrame,
         init_time = sub['valid_time'].min()
     return sub, init_time
 
-def scrape_jtwc_text_product(track_id: str) -> dict:
+def scrape_jtwc_text_product(track_id: str, jtwc_text_urls: dict = None) -> dict:
 
-    url = JTWC_TEXT_URLS.get(track_id)
+    urls = jtwc_text_urls if jtwc_text_urls is not None else JTWC_TEXT_URLS
+    url = urls.get(track_id)
     if not url:
         print(f"[JTWC] 無對應 web.txt URL: {track_id}")
         return {}
@@ -529,7 +549,7 @@ def extract_current_info(df: pd.DataFrame, target_time: pd.Timestamp) -> dict:
         'r34_nw': r34_nw,
     }
 
-def generate_frame_sequence(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: pd.Timestamp, track_id: str, output_dir: str, max_frames: int = 72) -> list:
+def generate_frame_sequence(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: pd.Timestamp, track_id: str, output_dir: str, max_frames: int = 72, model_name: str = "FNV3") -> list:
     """生成預報軌跡演變的幀序列，用於網頁動畫生成。與靜態地圖保持一致的風格。
     
     Returns:
@@ -665,7 +685,7 @@ def generate_frame_sequence(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: 
         # ── 圖例 ──────────────────────────────────────────────────────────────
         handles = [
             mlines.Line2D([], [], color='gray', label='Ensemble Members', lw=1),
-            mlines.Line2D([], [], color='red', marker='s', markeredgecolor='black', label='FNV3 Mean', lw=2),
+            mlines.Line2D([], [], color='red', marker='s', markeredgecolor='black', label=f'{model_name} Mean', lw=2),
             mlines.Line2D([], [], color='#88CC78', lw=4, alpha=0.55, label='Uncertainty Cone'),
             mlines.Line2D([], [], color='gold', marker='*', ms=9, ls='', markeredgecolor='darkorange', label='Init Position'),
         ]
@@ -691,7 +711,7 @@ def generate_frame_sequence(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: 
         # ── 標題 ──────────────────────────────────────────────────────────────
         time_str = pd.to_datetime(current_time).strftime('%Y-%m-%d %H:%M UTC')
         ax.set_title(
-            f"FNV3 {track_id} Track Forecast  (Init: {pd.to_datetime(init_time).strftime('%Y-%m-%d %H:%M UTC')})\n{time_str}",
+            f"{model_name} {track_id} Track Forecast  (Init: {pd.to_datetime(init_time).strftime('%Y-%m-%d %H:%M UTC')})\n{time_str}",
             fontsize=12, fontweight='bold', pad=15)
         plt.tight_layout(pad=0.6)
         frame_path = os.path.join(output_dir, f"frame_{frame_idx:04d}.png")
@@ -943,7 +963,7 @@ def _draw_uncertainty_cone(ax, df: pd.DataFrame, mean_df: pd.DataFrame,
             color='#CC3300', lw=1.6, alpha=1.0, zorder=0.50, **kw)
 
 
-def plot_forecast_map(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: pd.Timestamp, track_id: str, save_path: str):
+def plot_forecast_map(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: pd.Timestamp, track_id: str, save_path: str, model_name: str = "FNV3"):
     """將各 Ensemble member 的預報路徑畫在地圖上，並標示 Ensemble 平均路徑。"""
     # 計算範圍（處理國際換日線）
     all_lons = list(df['lon']) + list(mean_df['lon'])
@@ -1048,7 +1068,7 @@ def plot_forecast_map(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: pd.Tim
         # 圖例
         handles = [
             mlines.Line2D([], [], color='gray', label='Ensemble Members', lw=1),
-            mlines.Line2D([], [], color='red', marker='s', markeredgecolor='black', label='FNV3 Mean', lw=2),
+            mlines.Line2D([], [], color='red', marker='s', markeredgecolor='black', label=f'{model_name} Mean', lw=2),
             mlines.Line2D([], [], color='#88CC78', lw=4, alpha=0.55, label='Uncertainty Cone'),
             mlines.Line2D([], [], color='gold', marker='*', ms=10, ls='', markeredgecolor='darkorange', label='Init Position'),
         ]
@@ -1092,7 +1112,7 @@ def plot_forecast_map(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: pd.Tim
         int_leg.get_title().set_ha('center')
         ax.add_artist(int_leg)
 
-        ax.set_title(f"FNV3 {track_id} Track Forecast (Init: {pd.to_datetime(init_time).strftime('%Y-%m-%d %H:%M UTC')})", fontsize=16, fontweight='bold', pad=15)
+        ax.set_title(f"{model_name} {track_id} Track Forecast (Init: {pd.to_datetime(init_time).strftime('%Y-%m-%d %H:%M UTC')})", fontsize=16, fontweight='bold', pad=15)
         ax.text(0.995, 0.992, 'By Pillar', transform=ax.transAxes,
                 ha='right', va='top', fontsize=7, style='italic',
                 color='black', fontweight='bold', zorder=10)
@@ -1172,7 +1192,7 @@ def plot_forecast_map(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: pd.Tim
 
     handles = [
         mlines.Line2D([], [], color='gray', label='Ensemble Members', lw=1),
-        mlines.Line2D([], [], color='red', marker='s', markeredgecolor='black', label='FNV3 Mean', lw=2),
+        mlines.Line2D([], [], color='red', marker='s', markeredgecolor='black', label=f'{model_name} Mean', lw=2),
         mlines.Line2D([], [], color='#88CC78', lw=4, alpha=0.55, label='Uncertainty Cone'),
         mlines.Line2D([], [], color='gold', marker='*', ms=10, ls='', markeredgecolor='darkorange', label='Init Position'),
     ]
@@ -1216,7 +1236,7 @@ def plot_forecast_map(df: pd.DataFrame, mean_df: pd.DataFrame, init_time: pd.Tim
     int_leg.get_title().set_ha('center')
     ax.add_artist(int_leg)
 
-    ax.set_title(f"FNV3 {track_id} Track Forecast (Init: {pd.to_datetime(init_time).strftime('%Y-%m-%d %H:%M UTC')})", fontsize=16, fontweight='bold', pad=18)
+    ax.set_title(f"{model_name} {track_id} Track Forecast (Init: {pd.to_datetime(init_time).strftime('%Y-%m-%d %H:%M UTC')})", fontsize=16, fontweight='bold', pad=18)
     ax.text(0.995, 0.992, 'By Pillar', transform=ax.transAxes,
             ha='right', va='top', fontsize=7, style='italic',
             color='black', fontweight='bold', zorder=10)
@@ -1242,8 +1262,8 @@ def download(url_tmpl: str, out_dir: str, label: str) -> str:
     return out_path
 
 
-def plot_genesis_potential_map(csv_path: str, save_path: str):
-    """繪製西太平洋 FNV3 Ensemble 潛勢預報總覽圖（以 MSLP 著色）。"""
+def plot_genesis_potential_map(csv_path: str, save_path: str, model_name: str = "FNV3"):
+    """繪製西太平洋 Ensemble 潛勢預報總覽圖（以 MSLP 著色）。"""
     if not os.path.exists(csv_path):
         print(f"[GENESIS] 找不到潛勢 CSV：{csv_path}")
         return None
@@ -1263,7 +1283,11 @@ def plot_genesis_potential_map(csv_path: str, save_path: str):
         init_dt = pd.to_datetime(first['valid_time'], utc=True) - pd.to_timedelta(float(first['lead_time_hours']), unit='h')
         init_time_str = init_dt.strftime('%Y-%m-%d-%HZ')
     elif 'init_time' in df.columns:
-        init_time_str = str(df['init_time'].iloc[0]) + '-00Z'
+        try:
+            _idt = pd.to_datetime(df['init_time'].iloc[0], utc=True)
+            init_time_str = _idt.strftime('%Y-%m-%d-%HZ')
+        except Exception:
+            init_time_str = str(df['init_time'].iloc[0])
     else:
         init_time_str = ''
 
@@ -1347,7 +1371,7 @@ def plot_genesis_potential_map(csv_path: str, save_path: str):
                       edgecolor='#CC0000', alpha=0.85, linewidth=0.8))
 
     ax.set_title(
-        f'FNV3 Ensemble Forecast for Tropical Cyclone (0–360 hours)  '
+        f'{model_name} Ensemble Forecast for Tropical Cyclone (0–360 hours)  '
         f'Data sourced from Google DeepMind\n'
         f'Initial time: {init_time_str}',
         fontsize=11, fontweight='bold', pad=12
@@ -1526,34 +1550,194 @@ def main():
                 for _old in os.listdir(frames_dir):
                     if _old.startswith("frame_") and _old.endswith(".png"):
                         os.remove(os.path.join(frames_dir, _old))
-            frame_paths = generate_frame_sequence(df, mean_df, init_time, TARGET_TRACK_ID, frames_dir, max_frames=72)
+            frame_paths = generate_frame_sequence(df, mean_df, init_time, TARGET_TRACK_ID, frames_dir, max_frames=72, model_name="FNV3")
 
             # 將幀序列輸出成 GIF
             gif_path = os.path.join(OUTPUT_DIR, f"{TARGET_TRACK_ID}_Forecast_Animation.gif")
             gif_output = create_gif_from_frames(frame_paths, gif_path, duration_ms=180, loop=0)
-            
+
             # 將此颱風資料加入列表（包含各自的幀序列路徑）
             storms.append({
                 'track_id': TARGET_TRACK_ID,
+                'model': 'FNV3',
                 'forecast_map_path': save_path,
                 'current_info': current_info,
-                'frames_dir': frames_dir,  # 每個颱風專屬的幀序列資料夾
+                'frames_dir': frames_dir,
                 'forecast_gif_path': gif_output,
             })
-            
+
             print(f"[DONE] 完成颱風 {TARGET_TRACK_ID} 的處理")
-            
+
         except Exception as e:
             print(f"[ERROR] 處理 {TARGET_TRACK_ID} 時發生錯誤: {e}")
             continue
-    
+
+    # ── GENC 模式 ──────────────────────────────────────────────────────────────
+    print("\n[GENC] === 開始處理 GENC 模式 ===")
+
+    def _try_download_genc_cycle(cycle: datetime):
+        y = cycle.strftime("%Y")
+        m = cycle.strftime("%m")
+        d = cycle.strftime("%d")
+        h = cycle.strftime("%H")
+        fname = f"GENC_{y}_{m}_{d}T{h}_00_paired.csv"
+        path = os.path.join(GENC_ENSEMBLE_DIR, fname)
+        if os.path.exists(path):
+            return cycle, path
+        url = (
+            "https://deepmind.google.com/science/weatherlab/download/cyclones/GENC/ensemble/paired/csv/"
+            f"{fname}"
+        )
+        print(f"[GENC-DL] GET {url}")
+        resp = requests.get(url, stream=True, timeout=60)
+        if resp.status_code == 404:
+            return None, None
+        resp.raise_for_status()
+        with open(path, "wb") as f_out:
+            for chunk in resp.iter_content(chunk_size=8192):
+                if chunk:
+                    f_out.write(chunk)
+        print(f"[GENC-DL] saved to {path}")
+        return cycle, path
+
+    _genc_cycle_dt = _latest_cycle()
+    _genc_resolved_cycle = None
+    for _i in range(5):
+        _gc, _gp = _try_download_genc_cycle(_genc_cycle_dt - timedelta(hours=6 * _i))
+        if _gc is not None:
+            _genc_resolved_cycle = _gc
+            break
+
+    genc_genesis_map_path = None
+    if _genc_resolved_cycle is None:
+        print("[GENC] 無法取得最近 5 個 cycle 的 GENC ensemble CSV，略過 GENC 模式")
+    else:
+        if _genc_resolved_cycle != _latest_cycle():
+            print(f"[GENC] 回退至 cycle: {_genc_resolved_cycle.strftime('%Y-%m-%d %HZ')}")
+        genc_year  = _genc_resolved_cycle.strftime("%Y")
+        genc_month = _genc_resolved_cycle.strftime("%m")
+        genc_day   = _genc_resolved_cycle.strftime("%d")
+        genc_hour  = _genc_resolved_cycle.strftime("%H")
+        genc_filename = f"GENC_{genc_year}_{genc_month}_{genc_day}T{genc_hour}_00_paired.csv"
+        genc_csv_path = os.path.join(GENC_ENSEMBLE_DIR, genc_filename)
+
+        # 下載 GENC Ensemble Mean
+        genc_mean_csv_path = os.path.join(GENC_MEAN_DIR, genc_filename)
+        if not os.path.exists(genc_mean_csv_path):
+            genc_mean_url = (
+                "https://deepmind.google.com/science/weatherlab/download/cyclones/GENC/ensemble_mean/paired/csv/"
+                f"{genc_filename}"
+            )
+            print(f"[GENC-MEAN] GET {genc_mean_url}")
+            resp = requests.get(genc_mean_url, stream=True, timeout=60)
+            resp.raise_for_status()
+            with open(genc_mean_csv_path, "wb") as f_out:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    if chunk:
+                        f_out.write(chunk)
+            print(f"[GENC-MEAN] saved to {genc_mean_csv_path}")
+
+        # 偵測 GENC 颱風 Track ID
+        genc_track_ids = _auto_detect_track_ids(GENC_MEAN_DIR, preferred_path=genc_mean_csv_path, model_prefix="GENC")
+        genc_jtwc_forecast_urls, genc_jtwc_text_urls = _build_jtwc_urls(genc_track_ids)
+
+        # 下載 GENC Cyclogenesis 潛勢 CSV
+        genc_cyc_filename = f"GENC_{genc_year}_{genc_month}_{genc_day}T{genc_hour}_00_cyclogenesis.csv"
+        genc_cyc_path = os.path.join(GENC_CYCLOGENESIS_DIR, genc_cyc_filename)
+        genc_cyc_path_used = None
+        if os.path.exists(genc_cyc_path):
+            genc_cyc_path_used = genc_cyc_path
+        else:
+            genc_cyc_url = (
+                "https://deepmind.google.com/science/weatherlab/download/cyclones/GENC/ensemble/cyclogenesis/csv/"
+                f"{genc_cyc_filename}"
+            )
+            print(f"[GENC-GENESIS] 下載潛勢 CSV: {genc_cyc_url}")
+            try:
+                resp = requests.get(genc_cyc_url, headers=HEADERS, stream=True, timeout=60)
+                resp.raise_for_status()
+                with open(genc_cyc_path, "wb") as f_out:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        if chunk:
+                            f_out.write(chunk)
+                print(f"[GENC-GENESIS] saved to {genc_cyc_path}")
+                genc_cyc_path_used = genc_cyc_path
+            except Exception as e:
+                print(f"[GENC-GENESIS] 下載失敗: {e}，嘗試使用目錄中最新檔")
+                _genc_fallback = sorted([
+                    f for f in os.listdir(GENC_CYCLOGENESIS_DIR) if f.endswith('_cyclogenesis.csv')
+                ])
+                if _genc_fallback:
+                    genc_cyc_path_used = os.path.join(GENC_CYCLOGENESIS_DIR, _genc_fallback[-1])
+                    print(f"[GENC-GENESIS] 退而使用: {genc_cyc_path_used}")
+
+        # 生成 GENC 西太平洋潛勢預報圖
+        if genc_cyc_path_used and os.path.exists(genc_cyc_path_used):
+            print("[GENC-GENESIS] 正在繪製 GENC 西太平洋潛勢預報圖...")
+            genc_genesis_save = os.path.join(OUTPUT_DIR, "WP_Genesis_Potential_GENC.png")
+            genc_genesis_map_path = plot_genesis_potential_map(genc_cyc_path_used, genc_genesis_save, model_name="GENC")
+
+        # 處理所有 GENC 颱風
+        for genc_tid in genc_track_ids:
+            print(f"\n[GENC] === 處理颱風 {genc_tid} ===")
+            try:
+                df_g, init_time_g = load_forecast_dataframe(genc_csv_path, genc_tid)
+                mean_df_g, _ = load_forecast_dataframe(genc_mean_csv_path, genc_tid)
+
+                read_time_g = pd.Timestamp.now(tz='UTC')
+                current_info_g = extract_current_info(mean_df_g, read_time_g)
+
+                if genc_tid in genc_jtwc_text_urls:
+                    print(f"[JTWC] 嘗試從 JTWC web.txt 抓取 {genc_tid} 資料...")
+                    jtwc_data_g = scrape_jtwc_text_product(genc_tid, jtwc_text_urls=genc_jtwc_text_urls)
+                    if jtwc_data_g:
+                        current_info_g['jtwc'] = jtwc_data_g
+                        max_wind_g = jtwc_data_g.get('max_winds_kt')
+                        if max_wind_g is not None:
+                            try:
+                                current_info_g['wind'] = float(max_wind_g)
+                                current_info_g['category'] = ss_category(current_info_g['wind'])
+                            except Exception:
+                                pass
+
+                genc_save_path = os.path.join(OUTPUT_DIR, f"GENC_{genc_tid}_Forecast_Map.png")
+                plot_forecast_map(df_g, mean_df_g, init_time_g, genc_tid, genc_save_path, model_name="GENC")
+
+                download_jtwc_image(genc_tid, OUTPUT_DIR, jtwc_forecast_urls=genc_jtwc_forecast_urls)
+
+                genc_frames_dir = os.path.join(OUTPUT_DIR, f"animation_frames_GENC_{genc_tid}")
+                if os.path.isdir(genc_frames_dir):
+                    for _old in os.listdir(genc_frames_dir):
+                        if _old.startswith("frame_") and _old.endswith(".png"):
+                            os.remove(os.path.join(genc_frames_dir, _old))
+                genc_frame_paths = generate_frame_sequence(df_g, mean_df_g, init_time_g, genc_tid, genc_frames_dir, max_frames=72, model_name="GENC")
+
+                genc_gif_path = os.path.join(OUTPUT_DIR, f"GENC_{genc_tid}_Forecast_Animation.gif")
+                genc_gif_output = create_gif_from_frames(genc_frame_paths, genc_gif_path, duration_ms=180, loop=0)
+
+                storms.append({
+                    'track_id': genc_tid,
+                    'model': 'GENC',
+                    'forecast_map_path': genc_save_path,
+                    'current_info': current_info_g,
+                    'frames_dir': genc_frames_dir,
+                    'forecast_gif_path': genc_gif_output,
+                })
+
+                print(f"[GENC-DONE] 完成颱風 {genc_tid} 的處理")
+
+            except Exception as e:
+                print(f"[GENC-ERROR] 處理 {genc_tid} 時發生錯誤: {e}")
+                continue
+
     # 生成預報網站 HTML（支援多顆颱風；列表順序決定上下位置）
     print("\n[HTML] 正在生成預報網站...")
     from generate_forecast_website import generate_forecast_html
     html_path = os.path.join(OUTPUT_DIR, "index.html")
+    all_genesis_maps = [p for p in [genesis_map_path, genc_genesis_map_path] if p]
     generate_forecast_html(storms, html_path, frames_dir=None,
-                           genesis_map_path=genesis_map_path)
-    
+                           genesis_map_paths=all_genesis_maps)
+
     print("\n[DONE] 所有颱風處理完成")
 
 

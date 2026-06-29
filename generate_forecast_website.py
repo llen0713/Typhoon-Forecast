@@ -38,7 +38,7 @@ def ss_category(kt):
 
 
 def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str = None,
-                           genesis_map_path: str = None):
+                           genesis_map_path: str = None, genesis_map_paths: list = None):
     """生成預報網站，可展示多顆颱風。"""
 
     update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -66,6 +66,7 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
 
     for storm in storms:
         track_id = storm.get('track_id', 'Unknown')
+        model_name = storm.get('model', 'FNV3') if isinstance(storm, dict) else 'FNV3'
         current_info = storm.get('current_info', {}) if isinstance(storm, dict) else {}
         forecast_map_path = storm.get('forecast_map_path', '') if isinstance(storm, dict) else ''
         storm_frames_dir = storm.get('frames_dir', '')
@@ -196,7 +197,7 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
                 <div class="panel">
                     <div class="panel-header">
                         <span class="panel-icon">🗺</span>
-                        <span>FNV3 Ensemble Track Forecast</span>
+                        <span>{model_name} Ensemble Track Forecast</span>
                     </div>
                     <div class="map-image-wrapper" onclick="openLightbox(this.querySelector('img').src)">
                         <img src="{map_src}" alt="{track_id} Forecast Map" class="map-image"
@@ -227,20 +228,27 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
     cards_section = "\n".join(cards_html)
     title_track_ids = " / ".join(track_ids) if track_ids else "Forecast"
 
-    # 西太平洋潛勢預報面板
-    genesis_section = ""
-    if genesis_map_path and os.path.exists(genesis_map_path):
-        genesis_img_name = os.path.basename(genesis_map_path)
-        genesis_section = f"""
+    # 西太平洋潛勢預報面板（支援多個模式）
+    _all_genesis = list(genesis_map_paths or [])
+    if genesis_map_path and genesis_map_path not in _all_genesis:
+        _all_genesis.insert(0, genesis_map_path)
+
+    genesis_blocks = []
+    for _gpath in _all_genesis:
+        if not (_gpath and os.path.exists(_gpath)):
+            continue
+        _gimg = os.path.basename(_gpath)
+        _model_label = "GENC" if "GENC" in _gimg.upper() else "FNV3"
+        genesis_blocks.append(f"""
             <div class="panel genesis-panel">
                 <div class="panel-header">
                     <span class="panel-icon">🌏</span>
-                    <span>Western Pacific Genesis Potential — FNV3 Ensemble Overview</span>
+                    <span>Western Pacific Genesis Potential — {_model_label} Ensemble Overview</span>
                 </div>
                 <div class="genesis-body">
                     <div class="map-image-wrapper genesis-map-wrapper"
                          onclick="openLightbox(this.querySelector('img').src)">
-                        <img src="{genesis_img_name}"
+                        <img src="{_gimg}"
                              alt="Western Pacific Genesis Potential"
                              class="map-image genesis-map-img"
                              onload="this.classList.remove('loading')"
@@ -251,11 +259,12 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
                         <p class="map-note" style="margin-top:0;">
                             Circles = ensemble members at each 6-hr step, colored by minimum sea level pressure.
                             Gray lines = individual ensemble tracks (0–360 h).
-                            Data sourced from Google DeepMind FNV3.
+                            Data sourced from Google DeepMind {_model_label}.
                         </p>
                     </div>
                 </div>
-            </div>"""
+            </div>""")
+    genesis_section = "\n".join(genesis_blocks)
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en" data-theme="light">
@@ -781,7 +790,7 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
             <div class="brand-icon">🌀</div>
             <div class="brand-text">
                 <h1>Pillar's Tropical Cyclone Forecast</h1>
-                <small>Real-time FNV3 Ensemble Forecast System · Western Pacific</small>
+                <small>Real-time FNV3 / GENC Ensemble Forecast System · Western Pacific</small>
             </div>
         </div>
         <div class="header-actions">
@@ -804,7 +813,7 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
                 <div class="footer-brand">
                     <h3>Pillar's Tropical Cyclone Forecast System</h3>
                     <p>
-                        Ensemble track forecasts powered by the DeepMind FNV3 model.<br>
+                        Ensemble track forecasts powered by DeepMind FNV3 &amp; GENC models.<br>
                         Official intensity guidance from JTWC. Data refreshed automatically.
                     </p>
                 </div>
