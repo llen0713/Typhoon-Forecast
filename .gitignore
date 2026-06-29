@@ -6,6 +6,9 @@ Typhoon_Analysis_Forecast/
 deepmind_weather_downloads_2026/
 deepmind_weather_ensemble_mean_downloads_2026/
 deepmind_weather_cyclogenesis_2026/
+deepmind_weather_genc_downloads_2026/
+deepmind_weather_genc_ensemble_mean_downloads_2026/
+deepmind_weather_genc_cyclogenesis_2026/
 
 # 排除日誌與暫存
 forecast_log.txt
