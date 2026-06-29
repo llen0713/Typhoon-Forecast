@@ -819,6 +819,7 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
                 </div>
                 <div class="footer-links">
                     <a href="https://deepmind.google/discover/blog/graphcast-ai-model-for-faster-and-more-accurate-global-weather-forecasting/" class="footer-link" target="_blank">📚 About FNV3</a>
+                    <a href="https://deepmind.google.com/science/weatherlab" class="footer-link" target="_blank">📚 About GENC</a>
                     <a href="https://deepmind.google.com/science/weatherlab" class="footer-link" target="_blank">🌐 DeepMind Weather</a>
                     <a href="https://www.metoc.navy.mil/jtwc/jtwc.html" class="footer-link" target="_blank">🛰 JTWC</a>
                 </div>
