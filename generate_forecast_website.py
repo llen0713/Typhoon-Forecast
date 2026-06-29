@@ -987,8 +987,8 @@ def generate_forecast_html(storms: list[dict], output_path: str, frames_dir: str
     (function scheduleRefresh() {{
         const now = new Date();
         const next = new Date(now);
-        next.setMinutes(30, 0, 0);
-        if (now.getMinutes() >= 30) next.setHours(next.getHours() + 1);
+        next.setMinutes(35, 0, 0);
+        if (now.getMinutes() >= 35) next.setHours(next.getHours() + 1);
         setTimeout(() => location.reload(), next - now);
     }})();
     </script>
