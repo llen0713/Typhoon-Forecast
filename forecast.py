@@ -1,5 +1,6 @@
 import os
 import io
+import shutil
 import requests # type: ignore
 import pandas as pd # type: ignore
 from datetime import datetime, timezone, timedelta
@@ -1310,6 +1311,68 @@ def _get_cyclogenesis_csv(cfg: dict, stamp: str) -> str | None:
         return None
 
 
+def _cleanup_stale_outputs(prefix: str, keep_ids: list[str], display: str) -> None:
+    """移除本次未偵測到的颱風在此模式下的殘留產物。
+
+    颱風從某模式的偵測結果消失時（例如某 cycle 的 GENC 不再追蹤某顆），
+    舊的路徑圖、動畫 GIF 與幀目錄會永遠留在 OUTPUT_DIR，既佔空間也會被
+    commit 進 repo，且 index.html 不會再引用它們。
+
+    前綴以 ^ 錨定，確保無前綴的 FNV3P2（output_prefix=""）不會誤刪
+    FNV3P1_ / GENC_ 開頭的檔案。
+    """
+    if not os.path.isdir(OUTPUT_DIR):
+        return
+    keep = set(keep_ids)
+    p = re.escape(prefix)
+    file_re = re.compile(rf"^{p}(WP\d{{6}})_Forecast_(?:Map\.png|Animation\.gif)$")
+    dir_re = re.compile(rf"^animation_frames_{p}(WP\d{{6}})$")
+
+    # 清理是輔助性的：排程無人值守，任何失敗都只警告，不可中斷預報產出
+    try:
+        names = sorted(os.listdir(OUTPUT_DIR))
+    except OSError as e:
+        print(f"[{display}-CLEANUP] 警告: 無法列出 {OUTPUT_DIR}: {e}")
+        return
+
+    for name in names:
+        path = os.path.join(OUTPUT_DIR, name)
+        is_dir = os.path.isdir(path)
+        m = dir_re.match(name) if is_dir else file_re.match(name)
+        if not m or m.group(1) in keep:
+            continue
+        try:
+            shutil.rmtree(path) if is_dir else os.remove(path)
+            print(f"[{display}-CLEANUP] 已移除殘留產物: {name}")
+        except OSError as e:
+            print(f"[{display}-CLEANUP] 警告: 移除 {name} 失敗: {e}")
+
+
+def _cleanup_stale_jtwc(keep_ids: set[str]) -> None:
+    """移除已無任何模式追蹤的颱風其 JTWC 官方預報圖。
+
+    jtwc_{TID}.gif 與模式無關（同一顆真實颱風各模式共用），因此只能在
+    所有模式都跑完、以 track_id 聯集判斷才安全，不能放進 _process_model。
+    """
+    if not os.path.isdir(OUTPUT_DIR):
+        return
+    jtwc_re = re.compile(r"^jtwc_(WP\d{6})\.gif$")
+    try:
+        names = sorted(os.listdir(OUTPUT_DIR))
+    except OSError as e:
+        print(f"[CLEANUP] 警告: 無法列出 {OUTPUT_DIR}: {e}")
+        return
+    for name in names:
+        m = jtwc_re.match(name)
+        if not m or m.group(1) in keep_ids:
+            continue
+        try:
+            os.remove(os.path.join(OUTPUT_DIR, name))
+            print(f"[CLEANUP] 已移除殘留 JTWC 預報圖: {name}")
+        except OSError as e:
+            print(f"[CLEANUP] 警告: 移除 {name} 失敗: {e}")
+
+
 def _process_model(cfg: dict, get_jtwc_text, download_jtwc_img) -> tuple[str | None, list[dict]]:
     """執行單一模式的完整流程：解析 cycle、下載 CSV、繪製潛勢圖與各颱風產品。
 
@@ -1337,6 +1400,9 @@ def _process_model(cfg: dict, get_jtwc_text, download_jtwc_img) -> tuple[str | N
     track_ids = _auto_detect_track_ids(cfg["mean_dir"], preferred_path=mean_csv_path,
                                        model_prefix=cfg["local_prefix"])
     jtwc_forecast_urls, jtwc_text_urls = _build_jtwc_urls(track_ids)
+
+    # 先清掉本模式已不再追蹤的颱風產物，再產生本次結果
+    _cleanup_stale_outputs(cfg["output_prefix"], track_ids, display)
 
     # 西太平洋潛勢預報圖
     genesis_map_path = None
@@ -1444,6 +1510,9 @@ def main():
         if genesis_map_path:
             genesis_maps.append(genesis_map_path)
         storms.extend(model_storms)
+
+    # JTWC 預報圖跨模式共用，須等所有模式跑完才知道哪些颱風已完全消失
+    _cleanup_stale_jtwc({s['track_id'] for s in storms})
 
     # 生成預報網站 HTML（支援多顆颱風；storms 順序決定卡片與分頁排序）
     print("\n[HTML] 正在生成預報網站...")
