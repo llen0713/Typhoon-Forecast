@@ -1264,16 +1264,32 @@ def plot_genesis_potential_map(csv_path: str, save_path: str, model_name: str = 
 
 
 def _download_file(url: str, out_path: str, label: str, allow_404: bool = False) -> bool:
-    """下載檔案至 out_path。allow_404=True 時遇 404 回傳 False 而不拋錯。"""
+    """下載檔案至 out_path。allow_404=True 時遇 404 回傳 False 而不拋錯。
+
+    先寫入 .part 再 os.replace 換名。中途失敗或被 Ctrl+C 中斷時，out_path
+    要嘛不存在、要嘛還是完整的舊檔，不會留下截斷的半成品 —— 這點很重要，
+    因為 _resolve_cycle 與 mean/cyclogenesis 三處都只用 os.path.exists
+    判斷檔案可用，截斷檔一旦落地，之後每一次執行都會沉默地重用它。
+    """
     print(f"[{label}] GET {url}")
     resp = requests.get(url, headers=HEADERS, stream=True, timeout=60)
     if allow_404 and resp.status_code == 404:
         return False
     resp.raise_for_status()
-    with open(out_path, "wb") as f:
-        for chunk in resp.iter_content(chunk_size=8192):
-            if chunk:
-                f.write(chunk)
+    tmp_path = out_path + ".part"
+    try:
+        with open(tmp_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+        os.replace(tmp_path, out_path)
+    except BaseException:
+        # 攔 BaseException 而非 Exception：KeyboardInterrupt 正是要防的情況
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
     print(f"[{label}] saved to {out_path}")
     return True
 
