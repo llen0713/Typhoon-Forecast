@@ -124,6 +124,9 @@ MODEL_CONFIGS = [
     },
 ]
 
+# 每個下載目錄保留的 cycle 數（4 cycle/日，12 期約三天）。
+KEEP_CYCLES = 12
+
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; CopilotDownloader/1.0)"}
 
 # 輸出目錄
@@ -1311,6 +1314,35 @@ def _get_cyclogenesis_csv(cfg: dict, stamp: str) -> str | None:
         return None
 
 
+def _cleanup_old_downloads(cfg: dict) -> None:
+    """刪除下載目錄中過舊的 cycle 檔，只保留最近 KEEP_CYCLES 期。
+
+    這三個目錄原本只增不減（約 +20 MB/日）。舊檔也確實用不到：
+    _resolve_cycle 最多只回溯 5 個 cycle，_get_cyclogenesis_csv 的退路
+    也只取目錄中最新一檔。
+
+    檔名為 {local_prefix}_YYYY_MM_DDTHH_00_*.csv，字典序即時間序，
+    故直接依檔名排序後砍掉尾端以外的部分。
+    """
+    display = cfg["display"]
+    name_re = re.compile(
+        rf"^{re.escape(cfg['local_prefix'])}_\d{{4}}_\d{{2}}_\d{{2}}T\d{{2}}_00_\w+\.csv$")
+
+    # 清理是輔助性的：排程無人值守，任何失敗都只警告，不可中斷預報產出
+    for d in (cfg["ensemble_dir"], cfg["mean_dir"], cfg["cyc_dir"]):
+        try:
+            names = sorted(n for n in os.listdir(d) if name_re.match(n))
+        except OSError as e:
+            print(f"[{display}-CLEANUP] 警告: 無法列出 {d}: {e}")
+            continue
+        for name in names[:-KEEP_CYCLES]:
+            try:
+                os.remove(os.path.join(d, name))
+                print(f"[{display}-CLEANUP] 已移除過舊下載檔: {name}")
+            except OSError as e:
+                print(f"[{display}-CLEANUP] 警告: 移除 {name} 失敗: {e}")
+
+
 def _cleanup_stale_outputs(prefix: str, keep_ids: list[str], display: str) -> None:
     """移除本次未偵測到的颱風在此模式下的殘留產物。
 
@@ -1467,6 +1499,9 @@ def _process_model(cfg: dict, get_jtwc_text, download_jtwc_img) -> tuple[str | N
         except Exception as e:
             print(f"[{display}-ERROR] 處理 {tid} 時發生錯誤: {e}")
             continue
+
+    # 放在最後：本次要用的下載檔都已讀取完畢，不會刪到正在使用的檔
+    _cleanup_old_downloads(cfg)
 
     return genesis_map_path, storms
 
