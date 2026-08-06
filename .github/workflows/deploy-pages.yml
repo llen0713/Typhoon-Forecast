@@ -1,0 +1,56 @@
+name: Deploy docs to GitHub Pages
+
+# 取代 GitHub 自動產生的 legacy「pages build and deployment」。
+#
+# legacy 模式會 clone 完整 git 歷史（目前約 5.4 GB，來自每小時重新產生
+# docs/ 圖檔的自動 commit）再跑 Jekyll。改成淺層 checkout + 直接上傳
+# docs/ artifact 後，建置階段從數分鐘縮短到約 8 秒，且與歷史大小脫鉤。
+#
+# 注意：這是效率上的改善，並非 2026-08-06 那次部署故障的解法。
+# 那次故障是 GitHub Pages 後端問題（deployment 進到 in_progress 後
+# 由後端判定失敗），與 repo 大小無關 —— 同樣大小的 repo 在故障前
+# 已連續成功部署 19 次。
+
+on:
+  push:
+    branches: [main]
+    # 只有 docs/ 真的變動才部署，避免純程式碼 commit 觸發無意義的部署
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 每小時自動更新時，新的部署直接取代還在排隊的舊部署，避免佇列塞車
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # 只抓最新一個 commit，不拉完整歷史
+          fetch-depth: 1
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload docs artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
