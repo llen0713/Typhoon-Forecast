@@ -1,0 +1,1111 @@
+import os
+import pandas as pd  # type: ignore
+from datetime import datetime
+
+CAT_COLOR_MAP = {
+    'TD': '#CCCCCC',
+    'TS': '#00FFFF',
+    'Cat1': '#00FF00',
+    'Cat2': '#FFFF00',
+    'Cat3': '#FFA500',
+    'Cat4': '#FF0000',
+    'Cat5': '#800080',
+    'Unknown': 'gray',
+}
+
+
+def _fmt_coord(val, positive_label: str, negative_label: str):
+    if pd.isna(val):
+        return "N/A"
+    label = positive_label if val >= 0 else negative_label
+    return f"{abs(val):.2f}°{label}"
+
+
+# 與 forecast.py 的 ss_category 相同；刻意重複而不匯入，
+# 避免匯入 forecast 模組時觸發其模組層級的下載目錄建立等副作用。
+def ss_category(kt):
+    if pd.isna(kt):
+        return 'Unknown'
+    try:
+        kt = float(kt)
+    except Exception:
+        return 'Unknown'
+    if kt < 34: return 'TD'
+    elif kt < 64: return 'TS'
+    elif kt < 83: return 'Cat1'
+    elif kt < 96: return 'Cat2'
+    elif kt < 113: return 'Cat3'
+    elif kt < 137: return 'Cat4'
+    else: return 'Cat5'
+
+
+def generate_forecast_html(storms: list[dict], output_path: str,
+                           genesis_map_paths: list | None = None):
+    """生成預報網站，可展示多顆颱風。
+
+    同一顆颱風若同時有 FNV3-NEW / FNV3-OLD / GENC 多種模式的預報，會合併成單一颱風卡片：
+    颱風字卡與 JTWC 官方預報圖僅顯示一次，Ensemble 路徑圖與動畫則透過分頁
+    （FNV3-NEW / FNV3-OLD / GENC）切換，避免同一顆颱風重複出現多張幾乎相同的卡片。
+    """
+
+    update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # 依 track_id 分組（保留原始出現順序），同一顆颱風的 FNV3/GENC 併入同一組
+    groups: dict[str, list[dict]] = {}
+    order: list[str] = []
+    for storm in storms:
+        if not isinstance(storm, dict):
+            continue
+        tid = storm.get('track_id', 'Unknown')
+        if tid not in groups:
+            groups[tid] = []
+            order.append(tid)
+        groups[tid].append(storm)
+
+    cards_html = []
+    track_ids = order
+
+    if not storms:
+        cards_html.append("""
+            <div class="storm-card">
+                <div class="intensity-stripe" style="background:#64748b;"></div>
+                <div class="storm-card-inner">
+                    <div class="storm-header">
+                        <div class="storm-title">No Active Systems</div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Status</div>
+                            <div class="info-value">Awaiting data…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """)
+
+    for track_id in order:
+        models = groups[track_id]
+        # 摘要資訊優先採用有 JTWC 實時資料的那筆，否則採用第一筆
+        rep = next(
+            (m for m in models if isinstance(m.get('current_info'), dict) and m['current_info'].get('jtwc')),
+            models[0]
+        )
+        current_info = rep.get('current_info', {}) if isinstance(rep, dict) else {}
+
+        curr_lat = _fmt_coord(current_info.get('lat', float('nan')), 'N', 'S') if isinstance(current_info, dict) else "N/A"
+        curr_lon = _fmt_coord(current_info.get('lon', float('nan')), 'E', 'W') if isinstance(current_info, dict) else "N/A"
+        curr_wind_val = current_info.get('wind', float('nan')) if isinstance(current_info, dict) else float('nan')
+        curr_cat = current_info.get('category', 'Unknown') if isinstance(current_info, dict) else 'Unknown'
+        curr_cat_color = CAT_COLOR_MAP.get(curr_cat, 'gray')
+
+        jtwc_data = current_info.get('jtwc', {}) if isinstance(current_info, dict) else {}
+        storm_name = jtwc_data.get('name', '')
+        jtwc_update = jtwc_data.get('update_time', '')
+        jtwc_lat = jtwc_data.get('latitude', '')
+        jtwc_lon = jtwc_data.get('longitude', '')
+
+        display_title = storm_name if storm_name else "Active System"
+        display_time = jtwc_update if jtwc_update else "N/A"
+        display_lat = jtwc_lat if jtwc_lat else curr_lat
+        display_lon = jtwc_lon if jtwc_lon else curr_lon
+        jtwc_wind = f"{jtwc_data.get('max_winds_kt', 'N/A')} kt" if 'max_winds_kt' in jtwc_data else ''
+        display_wind = jtwc_wind if jtwc_wind else ("N/A" if pd.isna(curr_wind_val) else f"{curr_wind_val:.0f} kt")
+
+        if 'max_winds_kt' in jtwc_data:
+            curr_cat = ss_category(jtwc_data.get('max_winds_kt'))
+            curr_cat_color = CAT_COLOR_MAP.get(curr_cat, 'gray')
+
+        # Intensity label for badge (dark text on bright colors)
+        cat_text_color = "#000" if curr_cat in ('TS', 'Cat1', 'Cat2', 'Cat3') else "#fff"
+        if curr_cat in ('TD',):
+            cat_text_color = "#333"
+
+        model_names = [m.get('model', 'FNV3-NEW') for m in models if isinstance(m, dict)]
+        multi_model = len(models) > 1
+
+        # ── 颱風摘要字卡（每顆颱風僅一張，不再依模式重複）─────────────
+        cards_html.append(f"""
+            <div class="storm-card" id="card-{track_id}">
+                <div class="intensity-stripe" style="background:{curr_cat_color};"></div>
+                <div class="storm-card-inner">
+                    <div class="storm-header">
+                        <div>
+                            <div class="storm-title">{display_title}</div>
+                            <div class="storm-subtitle">Western Pacific Tropical Cyclone</div>
+                        </div>
+                        <div class="storm-badges">
+                            <span class="badge-cat" style="background:{curr_cat_color};color:{cat_text_color};">{curr_cat}</span>
+                            <span class="badge-id">{track_id}</span>
+                            <span class="badge-live"><span class="live-dot"></span>LIVE</span>
+                        </div>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">⏱ Obs Time</div>
+                            <div class="info-value">{display_time}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">📍 Position</div>
+                            <div class="info-value">{display_lat}, {display_lon}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">💨 Max Wind</div>
+                            <div class="info-value">{display_wind}</div>
+                        </div>
+                        <div class="info-item">
+
+                            <div class="info-label">🔥 Intensity</div>
+                            <div class="info-value intensity-value">
+                                <span class="intensity-dot" style="background:{curr_cat_color};"></span>
+                                <span>{curr_cat}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """)
+
+        # ── 模式分頁按鈕（僅同時有 FNV3 與 GENC 時顯示）───────────────
+        if multi_model:
+            tab_buttons = "".join(
+                f'<button class="model-tab-btn{" active" if i == 0 else ""}" '
+                f'data-track="{track_id}" data-model="{mn}" '
+                f'onclick="switchModelTab(\'{track_id}\', \'{mn}\')">{mn}</button>'
+                for i, mn in enumerate(model_names)
+            )
+            cards_html.append(f'<div class="model-tabs">{tab_buttons}</div>')
+
+        # ── 動畫（依模式分頁切換；僅在該模式有幀資料時輸出）───────────
+        for i, m in enumerate(models):
+            model_name = m.get('model', 'FNV3-NEW')
+            storm_frames_dir = m.get('frames_dir', '')
+            if not (storm_frames_dir and os.path.exists(storm_frames_dir)):
+                continue
+            frame_files = sorted([f for f in os.listdir(storm_frames_dir) if f.endswith('.png')])
+            if not frame_files:
+                continue
+            key = f"{track_id}-{model_name}"
+            frames_folder_name = os.path.basename(storm_frames_dir)
+            frames_json = str(frame_files).replace("'", '"')
+            hide_attr = '' if i == 0 else ' style="display:none;"'
+            cards_html.append(f"""
+            <div class="panel model-panel" data-track="{track_id}" data-model="{model_name}"{hide_attr} id="anim-section-{key}">
+                <div class="panel-header">
+                    <span class="panel-icon">🎬</span>
+                    <span>{model_name} Track Evolution Animation</span>
+                </div>
+                <div class="animation-player">
+                    <div class="frame-wrapper" onclick="openLightbox(document.getElementById('animation-frame-{key}').src)">
+                        <img id="animation-frame-{key}"
+                             src="{frames_folder_name}/{frame_files[0]}"
+                             alt="Animation Frame"
+                             class="animation-frame"
+                             data-frames-dir="{frames_folder_name}"
+                             data-all-frames='{frames_json}'>
+                        <div class="zoom-hint">🔍 Click to enlarge</div>
+                    </div>
+                    <div class="player-controls">
+                        <div class="controls-row">
+                            <button class="control-btn" onclick="playAnimation('{key}')" id="btn-play-{key}">▶ Play</button>
+                            <button class="control-btn secondary" onclick="pauseAnimation('{key}')">⏸ Pause</button>
+                            <button class="control-btn secondary" onclick="resetAnimation('{key}')">⟲ Reset</button>
+                            <div class="progress-bar-container">
+                                <input type="range" id="progress-{key}" class="progress-slider"
+                                       min="0" max="{len(frame_files)-1}" value="0"
+                                       oninput="seekFrame('{key}', this.value)">
+                                <span id="frame-counter-{key}" class="frame-counter">1/{len(frame_files)}</span>
+                            </div>
+                        </div>
+                        <div class="controls-row speed-row">
+                            <span class="speed-label">⚡ Speed:</span>
+                            <input type="range" id="speed-{key}" class="speed-slider"
+                                   min="1" max="8" value="2" step="0.5"
+                                   oninput="updateSpeed('{key}', this.value)">
+                            <span id="speed-val-{key}" class="speed-value">2×</span>
+                            <span class="kbd-hint"><kbd>Space</kbd> play/pause &nbsp;<kbd>←</kbd><kbd>→</kbd> seek</span>
+                        </div>
+                    </div>
+                </div>
+            </div>""")
+
+        # ── Ensemble 路徑圖（依模式分頁切換）+ JTWC 官方預報（每顆颱風僅一份）──
+        map_panels = []
+        for i, m in enumerate(models):
+            model_name = m.get('model', 'FNV3-NEW')
+            forecast_map_path = m.get('forecast_map_path', '') if isinstance(m, dict) else ''
+            map_src = os.path.basename(forecast_map_path) if forecast_map_path else ''
+            hide_attr = '' if i == 0 else ' style="display:none;"'
+            map_panels.append(f"""
+                <div class="model-panel" data-track="{track_id}" data-model="{model_name}"{hide_attr}>
+                    <div class="map-image-wrapper" onclick="openLightbox(this.querySelector('img').src)">
+                        <img src="{map_src}" alt="{track_id} {model_name} Forecast Map" class="map-image"
+                             onload="this.classList.remove('loading')" onerror="this.classList.add('img-error')">
+                        <div class="zoom-hint">🔍 Click to enlarge</div>
+                    </div>
+                    <p class="map-note">
+                        {model_name} &nbsp;·&nbsp; Gray = ensemble members &nbsp;·&nbsp; Red = mean track &nbsp;·&nbsp;
+                        Cone = uncertainty &nbsp;·&nbsp; Dots = 6-hr intensity &nbsp;·&nbsp; ★ = init
+                    </p>
+                </div>""")
+        map_panels_html = "".join(map_panels)
+
+        cards_html.append(f"""
+            <div class="maps-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-icon">🗺</span>
+                        <span>Ensemble Track Forecast</span>
+                    </div>
+                    {map_panels_html}
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-icon">🛰</span>
+                        <span>JTWC Official Forecast</span>
+                    </div>
+                    <div class="map-image-wrapper" onclick="openLightbox(this.querySelector('img').src)">
+                        <img src="jtwc_{track_id}.gif" alt="JTWC Forecast" class="map-image"
+                             onerror="this.closest('.panel').style.display='none'">
+                        <div class="zoom-hint">🔍 Click to enlarge</div>
+                    </div>
+                    <p class="map-note">Source: Joint Typhoon Warning Center (JTWC) — U.S. Navy &amp; Air Force</p>
+                </div>
+            </div>
+        """)
+
+    cards_section = "\n".join(cards_html)
+    title_track_ids = " / ".join(track_ids) if track_ids else "Forecast"
+
+    # 西太平洋潛勢預報面板 — 與颱風卡片相同的模式：FNV3/GENC 合併為單一面板，
+    # 用分頁切換，而非各自佔一整塊面板。
+    _all_genesis = list(genesis_map_paths or [])
+
+    _genesis_entries = []
+    for _gpath in _all_genesis:
+        if not (_gpath and os.path.exists(_gpath)):
+            continue
+        _gimg = os.path.basename(_gpath)
+        _gimg_upper = _gimg.upper()
+        if "GENC" in _gimg_upper:
+            _model_label = "GENC"
+        elif "FNV3P1" in _gimg_upper:
+            _model_label = "FNV3-OLD"
+        else:
+            _model_label = "FNV3-NEW"
+        _genesis_entries.append((_model_label, _gimg))
+
+    genesis_section = ""
+    if _genesis_entries:
+        multi_genesis = len(_genesis_entries) > 1
+
+        genesis_tabs_html = ""
+        if multi_genesis:
+            tab_buttons = "".join(
+                f'<button class="model-tab-btn{" active" if i == 0 else ""}" '
+                f'data-track="genesis" data-model="{label}" '
+                f'onclick="switchModelTab(\'genesis\', \'{label}\')">{label}</button>'
+                for i, (label, _img) in enumerate(_genesis_entries)
+            )
+            genesis_tabs_html = f'<div class="model-tabs genesis-tabs">{tab_buttons}</div>'
+
+        genesis_panels_html = "".join(f"""
+                <div class="model-panel" data-track="genesis" data-model="{label}"{'' if i == 0 else ' style="display:none;"'}>
+                    <div class="genesis-body">
+                        <div class="map-image-wrapper genesis-map-wrapper"
+                             onclick="openLightbox(this.querySelector('img').src)">
+                            <img src="{img}"
+                                 alt="Western Pacific Genesis Potential ({label})"
+                                 class="map-image genesis-map-img"
+                                 onload="this.classList.remove('loading')"
+                                 onerror="const p=this.closest('.model-panel'); p.dataset.broken='true'; p.style.display='none';">
+                            <div class="zoom-hint">🔍 Click to enlarge</div>
+                        </div>
+                        <div class="genesis-legend">
+                            <p class="map-note" style="margin-top:0;">
+                                Circles = ensemble members at each 6-hr step, colored by minimum sea level pressure.
+                                Gray lines = individual ensemble tracks (0–360 h).
+                                Data sourced from Google DeepMind {label}.
+                            </p>
+                        </div>
+                    </div>
+                </div>""" for i, (label, img) in enumerate(_genesis_entries))
+
+        genesis_section = f"""
+            <div class="panel genesis-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🌏</span>
+                    <span>Western Pacific Genesis Potential — Ensemble Overview</span>
+                </div>
+                {genesis_tabs_html}
+                {genesis_panels_html}
+            </div>"""
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pillar's Tropical Cyclone Forecast | {title_track_ids}</title>
+    <style>
+        /* ── Design Tokens ─────────────────────────────────────── */
+        :root {{
+            --bg:        #eef2f7;
+            --surface:   #ffffff;
+            --surface-2: #f4f7fb;
+            --surface-3: #eaeff7;
+            --accent:    #1558d6;
+            --accent-2:  #0891b2;
+            --accent-lo: rgba(21,88,214,.1);
+            --text:      #0c1a2e;
+            --text-2:    #4a5a72;
+            --text-3:    #8898aa;
+            --border:    #d4dce8;
+            --shadow:    0 2px 12px rgba(12,26,46,.07);
+            --shadow-md: 0 8px 32px rgba(12,26,46,.10);
+            --shadow-lg: 0 20px 60px rgba(12,26,46,.13);
+            --btn-bg:    linear-gradient(135deg,#1558d6,#0891b2);
+            --header-h:  64px;
+            --radius:    14px;
+        }}
+        [data-theme="dark"] {{
+            --bg:        #020c18;
+            --surface:   #091524;
+            --surface-2: #0e1f33;
+            --surface-3: #132840;
+            --accent:    #38bdf8;
+            --accent-2:  #2dd4bf;
+            --accent-lo: rgba(56,189,248,.10);
+            --text:      #dde8f4;
+            --text-2:    #8ba0ba;
+            --text-3:    #516078;
+            --border:    rgba(56,189,248,.14);
+            --shadow:    0 2px 12px rgba(0,0,0,.30);
+            --shadow-md: 0 8px 32px rgba(0,0,0,.40);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,.55);
+            --btn-bg:    linear-gradient(135deg,#1558d6,#0891b2);
+        }}
+
+        /* ── Reset ─────────────────────────────────────────────── */
+        *, *::before, *::after {{ margin:0; padding:0; box-sizing:border-box; }}
+        html {{ scroll-behavior:smooth; }}
+        body {{
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            transition: background .35s, color .35s;
+        }}
+        html, body {{ max-width: 100%; overflow-x: hidden; }}
+        img {{ max-width: 100%; height: auto; }}
+
+        /* ── Header ────────────────────────────────────────────── */
+        header {{
+            position: sticky; top: 0; z-index: 300;
+            min-height: var(--header-h);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            display: flex; align-items: center;
+            flex-wrap: wrap;
+            padding: 0 28px;
+            gap: 16px;
+            transition: background .35s, border .35s;
+            animation: slideDown .4s ease-out;
+        }}
+        @keyframes slideDown {{
+            from {{ opacity:0; transform:translateY(-12px); }}
+            to   {{ opacity:1; transform:translateY(0); }}
+        }}
+        .header-brand {{
+            display: flex; align-items: center; gap: 10px; flex: 1;
+        }}
+        .brand-icon {{
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--btn-bg);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em; flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(21,88,214,.35);
+        }}
+        .brand-text h1 {{
+            font-size: 1.05em; font-weight: 800; letter-spacing: -.3px;
+            color: var(--text); line-height: 1.1;
+        }}
+        .brand-text small {{
+            font-size: .72em; color: var(--text-3); font-weight: 500;
+            display: block; margin-top: 1px;
+        }}
+        .header-actions {{
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }}
+        .update-badge {{
+            display: flex; align-items: center; gap: 6px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 13px;
+            font-size: .77em; font-weight: 600; color: var(--text-2);
+            white-space: normal;
+            line-height: 1.25;
+        }}
+        .update-dot {{
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 2px rgba(34,197,94,.25);
+            animation: pulse-green 2s ease-in-out infinite;
+        }}
+        @keyframes pulse-green {{
+            0%,100% {{ box-shadow: 0 0 0 2px rgba(34,197,94,.25); }}
+            50%      {{ box-shadow: 0 0 0 5px rgba(34,197,94,.08); }}
+        }}
+        .theme-btn {{
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text-2); border-radius: 8px;
+            padding: 7px 14px; cursor: pointer;
+            font-size: .8em; font-weight: 600;
+            display: flex; align-items: center; gap: 5px;
+            transition: all .2s;
+        }}
+        .theme-btn:hover {{ background: var(--accent-lo); color: var(--accent); border-color: var(--accent); }}
+
+        /* ── Page Layout ────────────────────────────────────────── */
+        .page {{ max-width: 1380px; margin: 0 auto; padding: 28px 20px 48px; }}
+        .main-content {{
+            display: flex; flex-direction: column; gap: 24px;
+            animation: fadeUp .5s ease-out .1s both;
+        }}
+        @keyframes fadeUp {{
+            from {{ opacity:0; transform:translateY(12px); }}
+            to   {{ opacity:1; transform:translateY(0); }}
+        }}
+
+        /* ── Storm Card ─────────────────────────────────────────── */
+        .storm-card {{
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            display: flex;
+            transition: background .35s, border .35s;
+        }}
+        .intensity-stripe {{
+            width: 7px; flex-shrink: 0;
+        }}
+        .storm-card-inner {{
+            flex: 1; padding: 26px 26px 22px;
+        }}
+        .storm-header {{
+            display: flex; justify-content: space-between;
+            align-items: flex-start; flex-wrap: wrap; gap: 12px;
+            margin-bottom: 22px; padding-bottom: 18px;
+            border-bottom: 1px solid var(--border);
+        }}
+        .storm-title {{
+            font-size: 2em; font-weight: 800;
+            letter-spacing: -.5px; color: var(--text);
+            line-height: 1.1;
+            overflow-wrap: anywhere;
+        }}
+        .storm-subtitle {{
+            font-size: .8em; color: var(--text-3);
+            font-weight: 500; margin-top: 4px;
+            text-transform: uppercase; letter-spacing: .6px;
+        }}
+        .storm-badges {{
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }}
+        .badge-cat {{
+            padding: 6px 14px; border-radius: 8px;
+            font-size: .82em; font-weight: 800;
+            letter-spacing: .5px;
+        }}
+        .badge-id {{
+            background: var(--surface-3);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            padding: 6px 13px; border-radius: 8px;
+            font-size: .82em; font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }}
+        .badge-live {{
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.3);
+            color: #ef4444;
+            padding: 6px 13px; border-radius: 8px;
+            font-size: .8em; font-weight: 700;
+            display: flex; align-items: center; gap: 6px;
+            letter-spacing: .4px;
+        }}
+        /* ── Model Tabs (switch FNV3 / GENC for the same storm) ─── */
+        .model-tabs {{
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }}
+        .model-tab-btn {{
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            padding: 9px 20px; border-radius: 10px;
+            font-size: .88em; font-weight: 700; letter-spacing: .3px;
+            cursor: pointer; transition: all .18s;
+            box-shadow: var(--shadow);
+        }}
+        .model-tab-btn:hover {{ border-color: var(--accent); color: var(--accent); }}
+        .model-tab-btn.active {{
+            background: var(--btn-bg); color: #fff; border-color: transparent;
+            box-shadow: 0 4px 14px rgba(21,88,214,.3);
+        }}
+        .genesis-tabs {{ margin-bottom: 16px; }}
+        .live-dot {{
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #ef4444;
+            animation: pulse-red 1.4s ease-in-out infinite;
+        }}
+        @keyframes pulse-red {{
+            0%,100% {{ opacity:1; transform:scale(1); }}
+            50%      {{ opacity:.5; transform:scale(.8); }}
+        }}
+
+        /* ── Info Grid ──────────────────────────────────────────── */
+        .info-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }}
+        .info-item {{
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            padding: 14px 16px;
+            min-width: 0;
+            transition: transform .18s, box-shadow .18s;
+        }}
+        .info-item:hover {{ transform: translateY(-2px); box-shadow: var(--shadow-md); }}
+        .info-label {{
+            font-size: .69em; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-3);
+            font-weight: 700; margin-bottom: 7px;
+        }}
+        .info-value {{
+            font-size: 0.95em; font-weight: 700; color: var(--text);
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }}
+        .intensity-value {{ display: flex; align-items: center; gap: 9px; }}
+        .intensity-dot {{
+            width: 13px; height: 13px; border-radius: 50%;
+            border: 1.6px solid rgba(0,0,0,.15); flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,.2);
+        }}
+
+        /* ── Panel (generic section card) ───────────────────────── */
+        .panel {{
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 22px 24px;
+            transition: background .35s, border .35s;
+        }}
+        .panel-header {{
+            display: flex; align-items: center; gap: 10px;
+            font-size: 1.05em; font-weight: 700; color: var(--text);
+            margin-bottom: 16px; padding-bottom: 13px;
+            border-bottom: 2px solid var(--accent);
+        }}
+        .panel-icon {{
+            font-size: 1.15em;
+        }}
+
+        /* ── Maps Grid ──────────────────────────────────────────── */
+        .maps-grid {{
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 24px;
+        }}
+
+        /* ── Map Image ──────────────────────────────────────────── */
+        .map-image-wrapper {{
+            position: relative; border-radius: 10px; overflow: hidden;
+            cursor: zoom-in; background: var(--surface-2);
+            border: 1px solid var(--border);
+        }}
+        .map-image {{
+            width: 100%; height: auto; display: block;
+            transition: transform .3s ease, opacity .3s;
+        }}
+        .map-image.loading {{ opacity: .3; }}
+        .map-image:hover {{ transform: scale(1.008); }}
+        .zoom-hint {{
+            position: absolute; bottom: 10px; right: 10px;
+            background: rgba(0,0,0,.6); color: #fff;
+            padding: 4px 10px; border-radius: 6px; font-size: .73em;
+            opacity: 0; transition: opacity .2s; pointer-events: none;
+            font-weight: 500;
+        }}
+        .map-image-wrapper:hover .zoom-hint {{ opacity: 1; }}
+        .map-note {{
+            margin-top: 11px; color: var(--text-3);
+            font-size: .82em; line-height: 1.6;
+        }}
+
+        /* ── Lightbox ───────────────────────────────────────────── */
+        .lightbox {{
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,.93); cursor: zoom-out;
+            align-items: center; justify-content: center; padding: 20px;
+        }}
+        .lightbox.open {{ display: flex; }}
+        .lightbox img {{
+            max-width: 95vw; max-height: 92vh;
+            border-radius: 10px; object-fit: contain;
+            box-shadow: 0 30px 80px rgba(0,0,0,.6);
+        }}
+        .lb-close {{
+            position: absolute; top: 18px; right: 22px;
+            background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+            color: #fff; font-size: 1.4em; width: 40px; height: 40px;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; transition: background .2s;
+        }}
+        .lb-close:hover {{ background: rgba(255,255,255,.25); }}
+
+        /* ── Animation Player ───────────────────────────────────── */
+        .animation-player {{
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            overflow: hidden;
+        }}
+        .frame-wrapper {{
+            position: relative; cursor: zoom-in; overflow: hidden;
+        }}
+        .animation-frame {{
+            width: 100%; height: auto; display: block;
+            transition: opacity .12s;
+        }}
+        .player-controls {{
+            padding: 14px 16px;
+            display: flex; flex-direction: column; gap: 10px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+        }}
+        .controls-row {{
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }}
+        .speed-row {{ justify-content: flex-end; }}
+        .control-btn {{
+            background: var(--btn-bg); color: #fff; border: none;
+            padding: 8px 16px; border-radius: 8px;
+            font-size: .84em; font-weight: 600; cursor: pointer;
+            transition: all .2s; box-shadow: 0 3px 10px rgba(21,88,214,.3);
+            white-space: nowrap;
+        }}
+        .control-btn.secondary {{
+            background: var(--surface-2); color: var(--text-2);
+            border: 1px solid var(--border); box-shadow: none;
+        }}
+        .control-btn:hover {{ transform: translateY(-1px); filter: brightness(1.07); }}
+        .control-btn:active {{ transform: translateY(0); }}
+        .progress-bar-container {{
+            flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
+        }}
+        .progress-slider, .speed-slider {{
+            flex: 1; height: 4px; border-radius: 2px;
+            background: var(--border); outline: none;
+            -webkit-appearance: none; cursor: pointer;
+            appearance: none;
+            accent-color: var(--accent);
+        }}
+        .progress-slider::-webkit-slider-thumb,
+        .speed-slider::-webkit-slider-thumb {{
+            -webkit-appearance: none; width: 14px; height: 14px;
+            appearance: none;
+            border-radius: 50%; cursor: pointer;
+            background: var(--accent);
+            box-shadow: 0 1px 5px rgba(0,0,0,.25);
+        }}
+        .frame-counter {{
+            font-size: .79em; color: var(--text-3); font-weight: 600;
+            white-space: nowrap; min-width: 54px; text-align: right;
+            font-variant-numeric: tabular-nums;
+        }}
+        .speed-label {{ font-size: .79em; color: var(--text-3); font-weight: 600; white-space: nowrap; }}
+        .speed-slider {{ width: 80px; flex: none; }}
+        .speed-value {{ font-size: .82em; font-weight: 700; color: var(--accent); min-width: 28px; }}
+        .kbd-hint {{
+            font-size: .72em; color: var(--text-3); margin-left: 4px; display: none;
+        }}
+        kbd {{
+            background: var(--surface-3); border: 1px solid var(--border);
+            border-radius: 4px; padding: 1px 5px;
+            font-family: 'Courier New', monospace; font-size: .9em;
+        }}
+
+        /* ── Footer ─────────────────────────────────────────────── */
+        footer {{
+            margin-top: 40px;
+            border-top: 1px solid var(--border);
+            padding-top: 32px;
+        }}
+        .footer-inner {{
+            max-width: 1380px; margin: 0 auto; padding: 0 20px 32px;
+            display: grid; grid-template-columns: 1fr auto; gap: 24px;
+            align-items: start;
+        }}
+        .footer-brand h3 {{
+            font-size: 1em; font-weight: 700; color: var(--text); margin-bottom: 6px;
+        }}
+        .footer-brand p {{
+            font-size: .82em; color: var(--text-3); line-height: 1.6;
+        }}
+        .footer-links {{
+            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+        }}
+        .footer-link {{
+            color: var(--text-2); text-decoration: none;
+            font-size: .83em; font-weight: 500;
+            display: flex; align-items: center; gap: 5px;
+            transition: color .2s;
+        }}
+        .footer-link:hover {{ color: var(--accent); }}
+        .footer-copy {{
+            grid-column: 1 / -1;
+            font-size: .76em; color: var(--text-3);
+            padding-top: 16px; border-top: 1px solid var(--border);
+        }}
+
+        /* ── Genesis Potential Panel ───────────────────────────────── */
+        .genesis-panel {{
+            border-left: 4px solid #FF6600;
+        }}
+        .genesis-body {{
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }}
+        .genesis-map-wrapper {{
+            width: 100%;
+        }}
+        .genesis-map-img {{
+            width: 100%;
+            border-radius: 8px;
+        }}
+        .genesis-legend {{
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }}
+        /* ── Responsive ─────────────────────────────────────────── */
+        @media (max-width: 900px) {{
+            .maps-grid {{ grid-template-columns: 1fr; }}
+            .info-grid  {{ grid-template-columns: 1fr 1fr; }}
+            .header-brand small {{ display: none; }}
+            header {{ padding: 10px 16px; gap: 10px; }}
+            .header-actions {{ width: 100%; justify-content: space-between; }}
+        }}
+        @media (max-width: 600px) {{
+            .page {{ padding: 16px 12px 40px; }}
+            header {{ padding: 10px 12px; }}
+            .header-brand {{ width: 100%; min-width: 0; }}
+            .brand-icon {{ width: 32px; height: 32px; font-size: 1em; }}
+            .brand-text h1 {{ font-size: .95em; }}
+            .header-actions {{ gap: 8px; }}
+            .update-badge {{ flex: 1 1 170px; padding: 6px 10px; font-size: .72em; }}
+            .theme-btn {{ flex: 0 0 auto; padding: 7px 10px; font-size: .74em; }}
+            .storm-title {{ font-size: 1.55em; }}
+            .info-grid {{ grid-template-columns: 1fr 1fr; gap: 9px; }}
+            .storm-card-inner {{ padding: 18px 16px; }}
+            .panel {{ padding: 16px; }}
+            .footer-inner {{ grid-template-columns: 1fr; }}
+            .footer-links {{ align-items: flex-start; }}
+            .controls-row {{ flex-wrap: wrap; }}
+            .control-btn {{ flex: 1 1 calc(33.333% - 8px); min-width: 88px; text-align: center; }}
+            .progress-bar-container {{ width: 100%; min-width: 100%; order: 10; }}
+            .speed-row {{ justify-content: flex-start; }}
+            .speed-slider {{ width: 100%; max-width: 220px; }}
+            .map-note {{ font-size: .78em; }}
+        }}
+        @media (max-width: 380px) {{
+            .info-grid {{ grid-template-columns: 1fr; }}
+            .storm-title {{ font-size: 1.3em; }}
+            .storm-badges {{ width: 100%; }}
+            .badge-cat, .badge-id, .badge-live {{ padding: 5px 9px; font-size: .72em; }}
+            .control-btn {{ flex: 1 1 100%; }}
+        }}
+        @media (min-width: 900px) {{
+            .kbd-hint {{ display: inline; }}
+        }}
+    </style>
+</head>
+<body>
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <button class="lb-close" onclick="closeLightbox()" title="Close">✕</button>
+        <img id="lightbox-img" src="" alt="Full-size view">
+    </div>
+
+    <header>
+        <div class="header-brand">
+            <div class="brand-icon">🌀</div>
+            <div class="brand-text">
+                <h1>Pillar's Tropical Cyclone Forecast</h1>
+                <small>Real-time FNV3-NEW / FNV3-OLD / GENC Ensemble Forecast System · Western Pacific</small>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="update-badge">
+                <span class="update-dot"></span>
+                Updated: {update_time}
+            </div>
+            <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 Dark</button>
+        </div>
+    </header>
+
+    <div class="page">
+        <div class="main-content">
+{genesis_section}
+{cards_section}
+        </div>
+
+        <footer>
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <h3>Pillar's Tropical Cyclone Forecast System</h3>
+                    <p>
+                        Ensemble track forecasts powered by DeepMind FNV3-NEW, FNV3-OLD &amp; GENC models.<br>
+                        Official intensity guidance from JTWC. Data refreshed automatically.
+                    </p>
+                </div>
+                <div class="footer-links">
+                    <a href="https://deepmind.google.com/science/weatherlab" class="footer-link" target="_blank">🌐 DeepMind Weather</a>
+                    <a href="https://www.metoc.navy.mil/jtwc/jtwc.html" class="footer-link" target="_blank">🛰 JTWC</a>
+                </div>
+                <div class="footer-copy">© 2026 Pillar's Weather Site · Made by Pillar · Not for operational use</div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+    // ── Theme ─────────────────────────────────────────────────────────────────
+    (function() {{
+        const hour = new Date().getHours();
+        applyTheme((hour >= 18 || hour < 6) ? 'dark' : 'light', false);
+    }})();
+
+    function applyTheme(theme, save=true) {{
+        document.documentElement.setAttribute('data-theme', theme);
+        const btn = document.getElementById('theme-btn');
+        if (btn) btn.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        if (save) localStorage.setItem('theme', theme);
+    }}
+
+    function toggleTheme() {{
+        const current = document.documentElement.getAttribute('data-theme');
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+    }}
+
+    // ── Model tab switching (FNV3 / GENC for the same storm) ────────────────────
+    function switchModelTab(trackId, model) {{
+        document.querySelectorAll(`.model-panel[data-track="${{trackId}}"]`).forEach(el => {{
+            const isActive = el.dataset.model === model;
+            // A panel whose image already failed to load stays hidden even if selected —
+            // otherwise switching tabs away and back would silently un-hide the broken image.
+            el.style.display = (isActive && el.dataset.broken !== 'true') ? '' : 'none';
+            if (!isActive) {{
+                // Pause any animation living in the panel being hidden so it doesn't keep
+                // advancing frames in the background while its tab is inactive.
+                const frameImg = el.querySelector('[id^="animation-frame-"]');
+                if (frameImg) pauseAnimation(frameImg.id.replace('animation-frame-', ''));
+            }}
+        }});
+        document.querySelectorAll(`.model-tab-btn[data-track="${{trackId}}"]`).forEach(btn => {{
+            btn.classList.toggle('active', btn.dataset.model === model);
+        }});
+    }}
+
+    // ── Lightbox ──────────────────────────────────────────────────────────────
+    function openLightbox(src) {{
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }}
+    function closeLightbox() {{
+        document.getElementById('lightbox').classList.remove('open');
+        document.body.style.overflow = '';
+    }}
+    document.addEventListener('keydown', e => {{
+        if (e.key === 'Escape') closeLightbox();
+    }});
+
+    // ── Animation ─────────────────────────────────────────────────────────────
+    const animationState = {{}};
+
+    function initAnimation(trackId) {{
+        if (animationState[trackId]) return;
+        const frameImg = document.getElementById(`animation-frame-${{trackId}}`);
+        let allFrames = [];
+        if (frameImg) {{
+            try {{ allFrames = JSON.parse(frameImg.getAttribute('data-all-frames') || '[]'); }} catch(e) {{}}
+        }}
+        animationState[trackId] = {{
+            isPlaying: false,
+            currentFrame: 0,
+            totalFrames: allFrames.length,
+            frameFiles: allFrames,
+            framesDir: frameImg ? (frameImg.getAttribute('data-frames-dir') || '') : '',
+            intervalId: null,
+            speedMultiplier: 2,
+        }};
+    }}
+
+    function getIntervalMs(speed) {{
+        return Math.round(1000 / (speed * 1.5));
+    }}
+
+    function playAnimation(trackId) {{
+        initAnimation(trackId);
+        const state = animationState[trackId];
+        if (state.isPlaying) return;
+        state.isPlaying = true;
+        _scheduleNext(trackId);
+    }}
+
+    function _scheduleNext(trackId) {{
+        const state = animationState[trackId];
+        if (!state.isPlaying) return;
+        state.intervalId = setTimeout(() => {{
+            state.currentFrame = (state.currentFrame + 1) % state.totalFrames;
+            _renderFrame(trackId);
+            _scheduleNext(trackId);
+        }}, getIntervalMs(state.speedMultiplier));
+    }}
+
+    function pauseAnimation(trackId) {{
+        if (!animationState[trackId]) return;
+        const state = animationState[trackId];
+        state.isPlaying = false;
+        if (state.intervalId) {{ clearTimeout(state.intervalId); state.intervalId = null; }}
+    }}
+
+    function resetAnimation(trackId) {{
+        pauseAnimation(trackId);
+        initAnimation(trackId);
+        animationState[trackId].currentFrame = 0;
+        _renderFrame(trackId);
+    }}
+
+    function seekFrame(trackId, idx) {{
+        pauseAnimation(trackId);
+        initAnimation(trackId);
+        animationState[trackId].currentFrame = parseInt(idx);
+        _renderFrame(trackId);
+    }}
+
+    function updateSpeed(trackId, val) {{
+        initAnimation(trackId);
+        const state = animationState[trackId];
+        state.speedMultiplier = parseFloat(val);
+        const el = document.getElementById(`speed-val-${{trackId}}`);
+        if (el) el.textContent = `${{parseFloat(val).toFixed(1)}}×`;
+        if (state.isPlaying) {{
+            if (state.intervalId) {{ clearTimeout(state.intervalId); state.intervalId = null; }}
+            _scheduleNext(trackId);
+        }}
+    }}
+
+    function _renderFrame(trackId) {{
+        const state = animationState[trackId];
+        const frameImg = document.getElementById(`animation-frame-${{trackId}}`);
+        const slider   = document.getElementById(`progress-${{trackId}}`);
+        const counter  = document.getElementById(`frame-counter-${{trackId}}`);
+        if (!frameImg || !state.frameFiles.length) return;
+        const fileName = state.frameFiles[state.currentFrame];
+        const newSrc   = `${{state.framesDir}}/${{fileName}}`;
+        if (frameImg.src !== newSrc) frameImg.src = newSrc;
+        if (slider)  slider.value = state.currentFrame;
+        if (counter) counter.textContent = `${{state.currentFrame + 1}}/${{state.totalFrames}}`;
+    }}
+
+    // ── Keyboard shortcuts ─────────────────────────────────────────────────────
+    function _visibleAnimationKey() {{
+        // Pick the animation whose panel is actually shown (not hidden by a tab switch),
+        // rather than always the first one inserted into animationState.
+        const frameImg = Array.from(document.querySelectorAll('[id^="animation-frame-"]')).find(img => {{
+            const panel = img.closest('.model-panel');
+            return !panel || panel.style.display !== 'none';
+        }});
+        return frameImg ? frameImg.id.replace('animation-frame-', '') : null;
+    }}
+
+    document.addEventListener('keydown', e => {{
+        if (e.target.tagName === 'INPUT') return;
+        const tid = _visibleAnimationKey();
+        if (!tid) return;
+        if (e.code === 'Space') {{
+            e.preventDefault();
+            const state = animationState[tid];
+            if (state && state.isPlaying) pauseAnimation(tid); else playAnimation(tid);
+        }}
+        if (e.code === 'ArrowRight') {{
+            e.preventDefault();
+            initAnimation(tid);
+            const state = animationState[tid];
+            state.currentFrame = Math.min(state.currentFrame + 1, state.totalFrames - 1);
+            pauseAnimation(tid); _renderFrame(tid);
+        }}
+        if (e.code === 'ArrowLeft') {{
+            e.preventDefault();
+            initAnimation(tid);
+            const state = animationState[tid];
+            state.currentFrame = Math.max(state.currentFrame - 1, 0);
+            pauseAnimation(tid); _renderFrame(tid);
+        }}
+    }});
+
+    // ── Init ───────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {{
+        document.querySelectorAll('[id^="animation-frame-"]').forEach(el => {{
+            const tid = el.id.replace('animation-frame-', '');
+            initAnimation(tid);
+        }});
+    }});
+
+    // 每小時 HH:35 自動重新整理（排程任務於 HH:30 更新資料並推送，留 5 分鐘緩衝）
+    (function scheduleRefresh() {{
+        const now = new Date();
+        const next = new Date(now);
+        next.setMinutes(35, 0, 0);
+        if (now.getMinutes() >= 35) next.setHours(next.getHours() + 1);
+        setTimeout(() => location.reload(), next - now);
+    }})();
+    </script>
+</body>
+</html>"""
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+
+    print(f"[HTML] 已生成網站：{output_path}")
+
+
+if __name__ == "__main__":
+    # 單獨執行時：以 forecast.py 偵測到的第一顆颱風快速重建 index.html（測試用）
+    from forecast import TARGET_TRACK_IDS, OUTPUT_DIR
+    html_output_path = os.path.join(OUTPUT_DIR, "index.html")
+    if not TARGET_TRACK_IDS:
+        print("[INFO] 目前無活動颱風，生成空白網站")
+        generate_forecast_html([], html_output_path)
+    else:
+        track_id = TARGET_TRACK_IDS[0]
+        forecast_map_path = os.path.join(OUTPUT_DIR, f"{track_id}_Forecast_Map.png")
+        if os.path.exists(forecast_map_path):
+            storms = [{'track_id': track_id, 'forecast_map_path': forecast_map_path, 'current_info': {}}]
+            generate_forecast_html(storms, html_output_path)
+            print(f"[SUCCESS] 請開啟: {html_output_path}")
+        else:
+            print(f"[ERROR] 找不到預報地圖：{forecast_map_path}")
